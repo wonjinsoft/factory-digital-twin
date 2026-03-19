@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 환경변수 (비밀번호 포함)
+.env
+api/.env
+
+# Podman/Docker
+*.override.yml
