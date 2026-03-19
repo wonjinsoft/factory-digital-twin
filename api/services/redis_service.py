@@ -15,7 +15,7 @@ async def get_redis() -> aioredis.Redis:
     global _redis
     if _redis is None:
         _redis = await aioredis.from_url(
-            f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+            settings.get_redis_url(),  # ← 이렇게 변경
             decode_responses=True,
         )
     return _redis

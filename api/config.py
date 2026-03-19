@@ -11,8 +11,15 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    REDIS_URL: str = ""  # Railway Redis URL
     API_PORT: int = 8000
     SITE_ID: str = "site1"
+
+    def get_redis_url(self) -> str:
+        """Railway 환경이면 REDIS_URL, 로컬이면 REDIS_HOST:PORT"""
+        if self.REDIS_URL:
+            return self.REDIS_URL
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
     def machine_state_key(self, machine_id: str) -> str:
         """factory:{site_id}:machine:{machine_id}:state"""
