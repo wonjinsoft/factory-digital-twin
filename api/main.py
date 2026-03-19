@@ -38,3 +38,11 @@ app.include_router(ws_router)
 async def health_check():
     """헬스체크 엔드포인트"""
     return {"status": "ok", "site_id": settings.SITE_ID, "version": "v0.1"}
+
+@app.get("/debug")
+async def debug():
+    """환경변수 확인용"""
+    return {
+        "redis_url": settings.REDIS_URL,
+        "get_redis_url": settings.get_redis_url(),
+    }
