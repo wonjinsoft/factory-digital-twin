@@ -1,5 +1,5 @@
 // 파일: web/src/components/scene/FactoryScene.tsx
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, Html, useGLTF } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";

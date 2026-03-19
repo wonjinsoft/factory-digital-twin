@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import redis.asyncio as aioredis
 
 # 설정
-REDIS_URL = "redis://localhost:6379"
+REDIS_URL = "redis://default:rMshyHUzKsLrStLgHqYhVHffDDtccmkr@ballast.proxy.rlwy.net:21455"
 SITE_ID = "site1"
 MACHINE_COUNT = 20
 
