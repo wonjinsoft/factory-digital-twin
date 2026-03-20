@@ -17,7 +17,7 @@
 ---
 
 ## 배포 주소
-- **React (Vercel)**: https://factory-digital-twin-???.vercel.app
+- **React (Vercel)**: https://factory-digital-twin-rho.vercel.app
 - **FastAPI (Railway)**: https://factory-digital-twin-production-7e7f.up.railway.app
 - **GitHub**: https://github.com/wonjinsoft/factory-digital-twin
 
