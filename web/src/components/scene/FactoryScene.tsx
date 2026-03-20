@@ -112,7 +112,7 @@ function DragController({
     raycaster.current.ray.intersectPlane(floorPlane.current, intersection.current);
     dragState.current.groupRef.current.position.set(
       intersection.current.x,
-      0,
+      0.01,
       intersection.current.z
     );
   });
@@ -163,6 +163,7 @@ function SampleMachine({
     <group
       ref={groupRef}
       position={position}
+      castShadow
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
@@ -219,6 +220,7 @@ function MachineBox({
     <group
       ref={groupRef}
       position={position}
+      castShadow
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
@@ -275,7 +277,7 @@ export function FactoryScene() {
   const defaultPosition = useCallback((index: number): [number, number, number] => {
     const col = index % 5;
     const row = Math.floor(index / 5);
-    return [col * 4 - 8, 0, row * 4 - 6];
+    return [col * 4 - 8, 0.01, row * 4 - 6];
   }, []);
 
   useEffect(() => {
