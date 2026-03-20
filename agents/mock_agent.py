@@ -3,11 +3,13 @@
 역할: 가짜 기계 20대의 상태를 Redis에 저장하는 시뮬레이터
       제어 명령(power, material_loaded)은 존중하고 덮어쓰지 않음
 """
+import sys
 import asyncio
 import json
 import random
 from datetime import datetime, timezone
 import redis.asyncio as aioredis
+sys.stdout.reconfigure(line_buffering=True)
 
 # 설정
 import os
@@ -57,7 +59,7 @@ async def run():
 
     # 기계 ID 목록 생성 (M001 ~ M020)
     machine_ids = [f"M{i:03d}" for i in range(1, MACHINE_COUNT + 1)]
-    print(f"Mock 에이전트 시작 — 기계 {MACHINE_COUNT}대")
+    print(f"Mock 에이전트 시작 — 기계 {MACHINE_COUNT}대", flush=True)
 
     tick = 0
     while True:
@@ -72,7 +74,7 @@ async def run():
             )
 
         if tick % 10 == 0:
-            print(f"상태 업데이트 완료 — {MACHINE_COUNT}대 / tick {tick}")
+            print(f"상태 업데이트 완료 — {MACHINE_COUNT}대 / tick {tick}", flush=True)
 
         await asyncio.sleep(1)
 
