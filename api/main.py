@@ -10,6 +10,7 @@ from routers.machines import router as machines_router
 from routers.alarms import router as alarms_router
 from routers.websocket import router as ws_router
 from routers.agent_control import router as agent_control_router
+from routers.layout import router as layout_router
 
 app = FastAPI(
     title="Factory Digital Twin API",
@@ -38,6 +39,7 @@ app.include_router(machines_router)
 app.include_router(alarms_router)
 app.include_router(ws_router)
 app.include_router(agent_control_router)
+app.include_router(layout_router)
 
 @app.get("/health")
 async def health_check():
