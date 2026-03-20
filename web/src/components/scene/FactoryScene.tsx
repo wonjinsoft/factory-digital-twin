@@ -330,9 +330,22 @@ export function FactoryScene() {
     setCameraTarget(null);
   };
 
+  const resetLayout = async () => {
+   await axios.post(`${API_URL}/layout`, {}).catch(console.error);
+    setPositions({});
+  };
+
   return (
     <div className="w-full h-full relative">
       <div className="absolute top-4 right-4 z-10">
+  {editMode && (
+    <button
+      onClick={resetLayout}
+      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-zinc-800 border-red-600 text-red-400 hover:bg-red-900 transition-all"
+    >
+      ↺ 초기화
+    </button>
+  )}     
         <button
           onClick={toggleEditMode}
           className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
@@ -360,6 +373,12 @@ export function FactoryScene() {
           intensity={1.2}
           castShadow
           shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-30}
+          shadow-camera-right={30}
+          shadow-camera-top={30}
+          shadow-camera-bottom={-30}
+          shadow-camera-near={0.1}
+          shadow-camera-far={100}
         />
         <CameraController target={cameraTarget} />
         <DragController dragState={dragState} onDragEnd={handleDragEnd} />
