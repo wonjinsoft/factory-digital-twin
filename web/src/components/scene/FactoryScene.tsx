@@ -1,5 +1,6 @@
 // 파일: web/src/components/scene/FactoryScene.tsx
-import { useState } from "react";
+
+import { useState, useEffect, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Html, useGLTF } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
@@ -21,6 +22,7 @@ function FloorSlab() {
       <mesh receiveShadow>
         <boxGeometry args={[42, 0.4, 32]} />
         <meshStandardMaterial
+        
           color="#9ca3af"
           roughness={0.95}
           metalness={0.05}
@@ -87,11 +89,37 @@ function SampleMachine({
   onClick: () => void;
 }) {
   const { scene } = useGLTF("/Glb Test/Glb Test.gltf");
+  const cloned = useMemo(() => scene.clone(), [scene]);
+
+  const color = getMachineColor(machine.alarm_level, machine.power);
+
+  useEffect(() => {
+    const targetColor = new THREE.Color(color);
+    cloned.traverse((obj: any) => {
+      if (obj.isMesh && obj.material) {
+        // 머티리얼 배열 대응
+        const materials = Array.isArray(obj.material)
+          ? obj.material
+          : [obj.material];
+        materials.forEach((mat: any) => {
+          mat.color.lerp(targetColor, 0.6);  // 원래 색상에 60% 블렌딩
+          mat.emissive = new THREE.Color(
+            machine.alarm_level === "critical" ? "#ef4444" :
+            machine.alarm_level === "warning"  ? "#f59e0b" : "#000000"
+          );
+          mat.emissiveIntensity =
+            machine.alarm_level === "critical" ? 0.4 :
+            machine.alarm_level === "warning"  ? 0.25 : 0;
+          mat.needsUpdate = true;
+        });
+      }
+    });
+  }, [cloned, color, machine.alarm_level]);
 
   return (
     <group position={position}>
       <primitive
-        object={scene.clone()}
+        object={cloned}
         scale={10}
         position={[0, -1, 0]}
         onClick={(e: any) => { e.stopPropagation(); onClick(); }}
