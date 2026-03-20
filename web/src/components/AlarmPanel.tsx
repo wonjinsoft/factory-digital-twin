@@ -1,5 +1,4 @@
 // 파일: web/src/components/AlarmPanel.tsx
-// 역할: 활성 알람 목록 표시 및 확인 처리
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -15,7 +14,6 @@ interface Alarm {
 export function AlarmPanel() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
 
-  // 3초마다 알람 목록 갱신
   useEffect(() => {
     const fetchAlarms = async () => {
       try {
@@ -25,7 +23,6 @@ export function AlarmPanel() {
         console.error("알람 조회 실패", err);
       }
     };
-
     fetchAlarms();
     const interval = setInterval(fetchAlarms, 3000);
     return () => clearInterval(interval);
@@ -39,48 +36,62 @@ export function AlarmPanel() {
     }
   };
 
-  const getBadgeColor = (level: string) => {
-    if (level === "critical") return "bg-red-500";
-    if (level === "warning") return "bg-yellow-500";
-    return "bg-gray-400";
-  };
-
   return (
-    <div className="w-72 bg-white border-l border-gray-200 p-4 overflow-y-auto">
-      <h2 className="text-lg font-bold text-gray-800 mb-3">
-        🚨 알람 {alarms.length > 0 && (
-          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full ml-1">
+    <div className="w-70 bg-white/[0.02] border-l border-white/7 p-5 overflow-y-auto">
+      {/* 헤더 */}
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-[15px] font-semibold text-[#f5f5f7]">알람</span>
+        {alarms.length > 0 && (
+          <span className="bg-red-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
             {alarms.length}
           </span>
         )}
-      </h2>
+      </div>
 
       {alarms.length === 0 ? (
-        <p className="text-gray-400 text-sm">활성 알람 없음 ✅</p>
+        <div className="flex flex-col items-center mt-16 gap-2 text-zinc-600">
+          <span className="text-3xl">✓</span>
+          <span className="text-[13px]">활성 알람 없음</span>
+        </div>
       ) : (
         <div className="space-y-2">
-          {alarms.map((alarm) => (
-            <div
-              key={alarm.machine_id}
-              className="border border-gray-200 rounded-lg p-3"
-            >
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-bold text-gray-800">{alarm.machine_id}</span>
-                <span className={`${getBadgeColor(alarm.alarm_level)} text-white text-xs px-2 py-1 rounded-full`}>
-                  {alarm.alarm_level === "critical" ? "심각" : "경고"}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mb-2">
-                에러: {alarm.error_code} | 온도: {alarm.temperature}°C
-              </p>
-              <button
-                onClick={() => acknowledge(alarm.machine_id)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs py-1 rounded"
+          {alarms.map((alarm) => {
+            const isCritical = alarm.alarm_level === "critical";
+            return (
+              <div
+                key={alarm.machine_id}
+                className={`rounded-xl p-3 border ${
+                  isCritical
+                    ? "bg-red-500/10 border-red-500/25"
+                    : "bg-yellow-400/10 border-yellow-400/25"
+                }`}
               >
-                ✓ 확인
-              </button>
-            </div>
-          ))}
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[13px] font-semibold text-[#f5f5f7]">
+                    {alarm.machine_id}
+                  </span>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      isCritical
+                        ? "bg-red-500 text-white"
+                        : "bg-yellow-400 text-black"
+                    }`}
+                  >
+                    {isCritical ? "위험" : "경고"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mb-2.5">
+                  {alarm.error_code} · {alarm.temperature}°C
+                </p>
+                <button
+                  onClick={() => acknowledge(alarm.machine_id)}
+                  className="w-full bg-white/7 hover:bg-white/12 border border-white/10 text-[#ebebf5] text-[12px] font-medium py-1.5 rounded-lg transition-colors"
+                >
+                  확인
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,2 +1,9 @@
-export const API_URL = "https://factory-digital-twin-production-7e7f.up.railway.app";
-export const WS_URL = "wss://factory-digital-twin-production-7e7f.up.railway.app";
+﻿const isProd = import.meta.env.PROD;
+
+export const API_URL = isProd
+  ? "https://factory-digital-twin-production-7e7f.up.railway.app"
+  : "http://localhost:8000";
+
+export const WS_URL = isProd
+  ? "wss://factory-digital-twin-production-7e7f.up.railway.app"
+  : "ws://localhost:8000";

@@ -1,57 +1,50 @@
-// 파일: web/src/components/MachineCard.tsx
-// 역할: 기계 1대 상태 카드
 import { Machine } from "../stores/machineStore";
 
 interface Props {
   machine: Machine;
 }
 
-// 상태별 색상
-function getStatusColor(machine: Machine): string {
-  if (machine.alarm_level === "critical") return "bg-red-500";
-  if (machine.alarm_level === "warning") return "bg-yellow-500";
-  if (machine.power === "off") return "bg-gray-400";
-  return "bg-green-500";
-}
-
-function getStatusText(machine: Machine): string {
-  if (machine.alarm_level === "critical") return "심각";
-  if (machine.alarm_level === "warning") return "경고";
-  if (machine.power === "off") return "정지";
-  return "가동중";
+function getStatus(machine: Machine) {
+  if (machine.alarm_level === "critical")
+    return { dot: "bg-red-500", label: "위험", text: "text-red-400" };
+  if (machine.alarm_level === "warning")
+    return { dot: "bg-yellow-400", label: "경고", text: "text-yellow-400" };
+  if (machine.power === "off")
+    return { dot: "bg-zinc-500", label: "정지", text: "text-zinc-400" };
+  return { dot: "bg-emerald-500", label: "정상", text: "text-emerald-400" };
 }
 
 export function MachineCard({ machine }: Props) {
-  return (
-    <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-bold text-lg text-gray-800">{machine.machine_id}</h3>
-        <span className={`${getStatusColor(machine)} text-white text-xs px-2 py-1 rounded-full`}>
-          {getStatusText(machine)}
-        </span>
-      </div>
+  const status = getStatus(machine);
 
-      {/* 상태 정보 */}
-      <div className="space-y-1 text-sm text-gray-600">
-        <div className="flex justify-between">
-          <span>🌡️ 온도</span>
-          <span className="font-medium">{machine.temperature}°C</span>
-        </div>
-        <div className="flex justify-between">
-          <span>⚙️ RPM</span>
-          <span className="font-medium">{machine.rpm}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>📦 재료</span>
-          <span className="font-medium">
-            {machine.material_loaded === "true" ? "✅ 있음" : "❌ 없음"}
+  return (
+    <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 hover:bg-zinc-750 hover:border-zinc-600 transition-all duration-200">
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-sm font-semibold text-white">
+          {machine.machine_id}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <span className={`text-xs font-medium ${status.text}`}>
+            {status.label}
           </span>
         </div>
-        <div className="flex justify-between">
-          <span>🔧 에러</span>
-          <span className="font-medium">{machine.error_code}</span>
-        </div>
+      </div>
+
+      <div className="border-t border-zinc-700 mb-3" />
+
+      <div className="space-y-2">
+        {[
+          { label: "온도", value: `${machine.temperature}°C` },
+          { label: "RPM",  value: machine.rpm },
+          { label: "소재", value: machine.material_loaded === "true" ? "적재됨" : "없음" },
+          { label: "코드", value: machine.error_code },
+        ].map(({ label, value }) => (
+          <div key={label} className="flex justify-between items-center">
+            <span className="text-xs text-zinc-500">{label}</span>
+            <span className="text-xs font-medium text-zinc-100">{value}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

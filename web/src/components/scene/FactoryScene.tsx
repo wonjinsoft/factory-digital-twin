@@ -1,7 +1,7 @@
 // 파일: web/src/components/scene/FactoryScene.tsx
 import { useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, Html, useGLTF } from "@react-three/drei";
+import { OrbitControls, Html, useGLTF } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useMachineStore } from "../../stores/machineStore";
 import { MachinePopup } from "./MachinePopup";
@@ -14,19 +14,57 @@ function getMachineColor(alarmLevel: string, power: string): string {
   return "#22c55e";
 }
 
+function FloorSlab() {
+  return (
+    <group position={[0, -0.75, 0]}>
+      {/* 콘크리트 바닥 본체 */}
+      <mesh receiveShadow>
+        <boxGeometry args={[42, 0.4, 32]} />
+        <meshStandardMaterial
+          color="#9ca3af"
+          roughness={0.95}
+          metalness={0.05}
+        />
+      </mesh>
+
+      {/* 외곽 엣지 */}
+      <lineSegments>
+        <edgesGeometry args={[new THREE.BoxGeometry(42, 0.4, 32)]} />
+        <lineBasicMaterial color="#e5e7eb" />
+      </lineSegments>
+
+      {/* 입체감 — 상단 하이라이트 띠 */}
+      {/* 앞면 */}
+      <mesh position={[0, 0.22, 16]}>
+        <boxGeometry args={[42, 0.04, 0.1]} />
+        <meshStandardMaterial color="#d1d5db" emissive="#ffffff" emissiveIntensity={0.15} />
+      </mesh>
+      {/* 뒷면 */}
+      <mesh position={[0, 0.22, -16]}>
+        <boxGeometry args={[42, 0.04, 0.1]} />
+        <meshStandardMaterial color="#d1d5db" emissive="#ffffff" emissiveIntensity={0.15} />
+      </mesh>
+      {/* 좌면 */}
+      <mesh position={[-21, 0.22, 0]}>
+        <boxGeometry args={[0.1, 0.04, 32]} />
+        <meshStandardMaterial color="#d1d5db" emissive="#ffffff" emissiveIntensity={0.15} />
+      </mesh>
+      {/* 우면 */}
+      <mesh position={[21, 0.22, 0]}>
+        <boxGeometry args={[0.1, 0.04, 32]} />
+        <meshStandardMaterial color="#d1d5db" emissive="#ffffff" emissiveIntensity={0.15} />
+      </mesh>
+    </group>
+  );
+}
+
 function CameraController({ target }: { target: THREE.Vector3 | null }) {
   const { camera } = useThree();
 
   useSpring({
-    to: target ? {
-      x: target.x,
-      y: target.y + 6,
-      z: target.z + 8,
-    } : {
-      x: 0,
-      y: 15,
-      z: 20,
-    },
+    to: target
+      ? { x: target.x, y: target.y + 6, z: target.z + 8 }
+      : { x: 0, y: 15, z: 20 },
     onChange: ({ value }: any) => {
       camera.position.set(value.x, value.y, value.z);
       if (target) camera.lookAt(target);
@@ -37,8 +75,12 @@ function CameraController({ target }: { target: THREE.Vector3 | null }) {
   return null;
 }
 
-
-function SampleMachine({ machine, position, isSelected, onClick }: {
+function SampleMachine({
+  machine,
+  position,
+  isSelected,
+  onClick,
+}: {
   machine: any;
   position: [number, number, number];
   isSelected: boolean;
@@ -54,8 +96,6 @@ function SampleMachine({ machine, position, isSelected, onClick }: {
         position={[0, -1, 0]}
         onClick={(e: any) => { e.stopPropagation(); onClick(); }}
       />
-
-      {/* 기계 이름 텍스트 */}
       <Html position={[0, -1.3, 0]} center distanceFactor={8}>
         <div style={{
           color: "white",
@@ -68,13 +108,8 @@ function SampleMachine({ machine, position, isSelected, onClick }: {
           {machine.machine_id}
         </div>
       </Html>
-
-      {/* 팝업 */}
       {isSelected && (
-        <MachinePopup
-          machine={machine}
-          onClose={() => onClick()}
-        />
+        <MachinePopup machine={machine} onClose={() => onClick()} />
       )}
     </group>
   );
@@ -95,7 +130,7 @@ function MachineBox({
 
   return (
     <group position={position}>
-      <mesh onClick={(e) => { e.stopPropagation(); onClick(); }}>
+      <mesh castShadow onClick={(e) => { e.stopPropagation(); onClick(); }}>
         <boxGeometry args={[1.5, 1.5, 1.5]} />
         <meshStandardMaterial
           color={color}
@@ -127,10 +162,7 @@ function MachineBox({
       </Html>
 
       {isSelected && (
-        <MachinePopup
-          machine={machine}
-          onClose={() => onClick()}
-        />
+        <MachinePopup machine={machine} onClose={() => onClick()} />
       )}
     </group>
   );
@@ -148,7 +180,10 @@ export function FactoryScene() {
     return [col * 4 - 8, 0, row * 4 - 6];
   };
 
-  const handleClick = (machine_id: string, position: [number, number, number]) => {
+  const handleClick = (
+    machine_id: string,
+    position: [number, number, number]
+  ) => {
     if (selectedId === machine_id) {
       setSelectedId(null);
       setCameraTarget(null);
@@ -160,51 +195,45 @@ export function FactoryScene() {
 
   return (
     <div className="w-full h-full">
-      <Canvas camera={{ position: [0, 15, 20], fov: 50 }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 20, 10]} intensity={1} />
+      <Canvas camera={{ position: [0, 15, 20], fov: 50 }} shadows>
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          position={[10, 20, 10]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+        />
 
         <CameraController target={cameraTarget} />
 
-        <Grid
-          args={[40, 40]}
-          cellSize={1}
-          cellThickness={0.5}
-          cellColor="#6b7280"
-          sectionSize={4}
-          sectionThickness={1}
-          sectionColor="#374151"
-          fadeDistance={50}
-          position={[0, -0.75, 0]}
-        />
+        <FloorSlab />
 
-{machineList.map((machine, index) => {
-  const position = getPosition(index);
-  
-if (index === 0) {
-  return (
-    <SampleMachine
-      key={machine.machine_id}
-      machine={machine}
-      position={position}
-      isSelected={selectedId === machine.machine_id}
-      onClick={() => handleClick(machine.machine_id, position)}
-    />
-  );
-}
+        {machineList.map((machine, index) => {
+          const position = getPosition(index);
 
-  return (
-    <MachineBox
-      key={machine.machine_id}
-      machine={machine}
-      position={position}
-      isSelected={selectedId === machine.machine_id}
-      onClick={() => handleClick(machine.machine_id, position)}
-    />
-  );
-})}
+          if (index === 0) {
+            return (
+              <SampleMachine
+                key={machine.machine_id}
+                machine={machine}
+                position={position}
+                isSelected={selectedId === machine.machine_id}
+                onClick={() => handleClick(machine.machine_id, position)}
+              />
+            );
+          }
 
-        {/* 팝업 닫히면 OrbitControls 활성화 */}
+          return (
+            <MachineBox
+              key={machine.machine_id}
+              machine={machine}
+              position={position}
+              isSelected={selectedId === machine.machine_id}
+              onClick={() => handleClick(machine.machine_id, position)}
+            />
+          );
+        })}
+
         <OrbitControls makeDefault enabled={cameraTarget === null} />
       </Canvas>
     </div>

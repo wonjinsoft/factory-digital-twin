@@ -14,6 +14,8 @@ function App() {
   const { machines, setMachines } = useMachineStore();
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "3d">("dashboard");
+  // ✅ 추가
+  const [agentPaused, setAgentPaused] = useState(false);
   useWebSocket();
 
   useEffect(() => {
@@ -21,6 +23,23 @@ function App() {
       .then((res) => setMachines(res.data.machines))
       .catch((err) => console.error("기계 목록 조회 실패", err));
   }, []);
+
+  // ✅ 추가: 초기 Agent 상태 조회
+  useEffect(() => {
+    axios.get(`${API_URL}/control/agent/status`)
+      .then((res) => setAgentPaused(res.data.paused))
+      .catch((err) => console.error("Agent 상태 조회 실패", err));
+  }, []);
+
+  // ✅ 추가: 토글 핸들러
+  const toggleAgent = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/control/agent/toggle`);
+      setAgentPaused(res.data.paused);
+    } catch (err) {
+      console.error("Agent 토글 실패", err);
+    }
+  };
 
   const currentMachine = selectedMachine
     ? machines[selectedMachine.machine_id]
@@ -42,8 +61,23 @@ function App() {
           </p>
         </div>
 
-        {/* 탭 전환 버튼 */}
-        <div className="flex gap-2">
+        {/* 탭 + Agent 제어 버튼 */}
+        <div className="flex gap-2 items-center">
+          {/* ✅ 추가: Agent 토글 버튼 */}
+          <button
+            onClick={toggleAgent}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              agentPaused
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            {agentPaused ? "▶ Agent 재개" : "⏸ Agent 정지"}
+          </button>
+
+          {/* 구분선 */}
+          <div className="w-px h-6 bg-gray-300" />
+
           <button
             onClick={() => setActiveTab("dashboard")}
             className={`px-4 py-2 rounded-lg font-medium ${
