@@ -76,11 +76,13 @@ function SampleMachine({
   const cloned = useMemo(() => scene.clone(), [scene]);
   const color = getMachineColor(machine.alarm_level, machine.power);
   const dragging = useRef(false);
-  const [dragPos, setDragPos] = useState<[number, number, number]>(position);
+  const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    if (!editMode) setDragPos(position);
-  }, [position, editMode]);
+    if (groupRef.current) {
+      groupRef.current.position.set(...position);
+    }
+  }, [position]);
 
   useEffect(() => {
     const targetColor = new THREE.Color(color);
@@ -104,7 +106,8 @@ function SampleMachine({
 
   return (
     <group
-      position={dragPos}
+      ref={groupRef}
+      position={position}
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
@@ -114,12 +117,14 @@ function SampleMachine({
         if (!editMode || !dragging.current) return;
         e.stopPropagation();
         dragging.current = false;
-        onDragEnd(dragPos[0], dragPos[2]);
+        if (groupRef.current) {
+          onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
+        }
       }}
       onPointerMove={(e) => {
         if (!editMode || !dragging.current) return;
         e.stopPropagation();
-        setDragPos([e.point.x, 0, e.point.z]);
+        groupRef.current?.position.set(e.point.x, 0, e.point.z);
       }}
     >
       <primitive
@@ -163,15 +168,18 @@ function MachineBox({
 }) {
   const color = getMachineColor(machine.alarm_level, machine.power);
   const dragging = useRef(false);
-  const [dragPos, setDragPos] = useState<[number, number, number]>(position);
+  const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    if (!editMode) setDragPos(position);
-  }, [position, editMode]);
+    if (groupRef.current) {
+      groupRef.current.position.set(...position);
+    }
+  }, [position]);
 
   return (
     <group
-      position={dragPos}
+      ref={groupRef}
+      position={position}
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
@@ -181,12 +189,14 @@ function MachineBox({
         if (!editMode || !dragging.current) return;
         e.stopPropagation();
         dragging.current = false;
-        onDragEnd(dragPos[0], dragPos[2]);
+        if (groupRef.current) {
+          onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
+        }
       }}
       onPointerMove={(e) => {
         if (!editMode || !dragging.current) return;
         e.stopPropagation();
-        setDragPos([e.point.x, 0, e.point.z]);
+        groupRef.current?.position.set(e.point.x, 0, e.point.z);
       }}
     >
       <mesh
