@@ -1,6 +1,6 @@
 // 파일: web/src/components/scene/FactoryScene.tsx
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, useGLTF } from "@react-three/drei";
 import { useSpring } from "@react-spring/three";
 import { useMachineStore } from "../../stores/machineStore";
@@ -62,26 +62,81 @@ function CameraController({ target }: { target: THREE.Vector3 | null }) {
   return null;
 }
 
+// 드래그 상태를 씬 전체에서 공유하는 ref
+interface DragState {
+  draggingId: string | null;
+  groupRef: React.RefObject<THREE.Group> | null;
+}
+
+function DragController({
+  dragState,
+  onDragEnd,
+}: {
+  dragState: React.MutableRefObject<DragState>;
+  onDragEnd: (id: string, x: number, z: number) => void;
+}) {
+  const { camera, gl } = useThree();
+  const mouse = useRef(new THREE.Vector2());
+  const raycaster = useRef(new THREE.Raycaster());
+  const floorPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+  const intersection = useRef(new THREE.Vector3());
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      mouse.current.set(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+    };
+    const onMouseUp = () => {
+      if (dragState.current.draggingId && dragState.current.groupRef?.current) {
+        const pos = dragState.current.groupRef.current.position;
+        onDragEnd(dragState.current.draggingId, pos.x, pos.z);
+      }
+      dragState.current.draggingId = null;
+      dragState.current.groupRef = null;
+    };
+    el.addEventListener("mousemove", onMouseMove);
+    el.addEventListener("mouseup", onMouseUp);
+    return () => {
+      el.removeEventListener("mousemove", onMouseMove);
+      el.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [gl, dragState, onDragEnd]);
+
+  useFrame(() => {
+    if (!dragState.current.draggingId || !dragState.current.groupRef?.current) return;
+    raycaster.current.setFromCamera(mouse.current, camera);
+    raycaster.current.ray.intersectPlane(floorPlane.current, intersection.current);
+    dragState.current.groupRef.current.position.set(
+      intersection.current.x,
+      0,
+      intersection.current.z
+    );
+  });
+
+  return null;
+}
+
 function SampleMachine({
-  machine, position, isSelected, editMode, onClick, onDragEnd,
+  machine, position, isSelected, editMode, onClick, onDragStart,
 }: {
   machine: any;
   position: [number, number, number];
   isSelected: boolean;
   editMode: boolean;
   onClick: () => void;
-  onDragEnd: (x: number, z: number) => void;
+  onDragStart: (groupRef: React.RefObject<THREE.Group>) => void;
 }) {
   const { scene } = useGLTF("/Glb Test/Glb Test.gltf");
   const cloned = useMemo(() => scene.clone(), [scene]);
   const color = getMachineColor(machine.alarm_level, machine.power);
-  const dragging = useRef(false);
   const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...position);
-    }
+    groupRef.current?.position.set(...position);
   }, [position]);
 
   useEffect(() => {
@@ -111,20 +166,7 @@ function SampleMachine({
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
-        dragging.current = true;
-      }}
-      onPointerUp={(e) => {
-        if (!editMode || !dragging.current) return;
-        e.stopPropagation();
-        dragging.current = false;
-        if (groupRef.current) {
-          onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
-        }
-      }}
-      onPointerMove={(e) => {
-        if (!editMode || !dragging.current) return;
-        e.stopPropagation();
-        groupRef.current?.position.set(e.point.x, 0, e.point.z);
+        onDragStart(groupRef);
       }}
     >
       <primitive
@@ -157,23 +199,20 @@ function SampleMachine({
 }
 
 function MachineBox({
-  machine, position, isSelected, editMode, onClick, onDragEnd,
+  machine, position, isSelected, editMode, onClick, onDragStart,
 }: {
   machine: any;
   position: [number, number, number];
   isSelected: boolean;
   editMode: boolean;
   onClick: () => void;
-  onDragEnd: (x: number, z: number) => void;
+  onDragStart: (groupRef: React.RefObject<THREE.Group>) => void;
 }) {
   const color = getMachineColor(machine.alarm_level, machine.power);
-  const dragging = useRef(false);
   const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...position);
-    }
+    groupRef.current?.position.set(...position);
   }, [position]);
 
   return (
@@ -183,20 +222,7 @@ function MachineBox({
       onPointerDown={(e) => {
         if (!editMode) return;
         e.stopPropagation();
-        dragging.current = true;
-      }}
-      onPointerUp={(e) => {
-        if (!editMode || !dragging.current) return;
-        e.stopPropagation();
-        dragging.current = false;
-        if (groupRef.current) {
-          onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
-        }
-      }}
-      onPointerMove={(e) => {
-        if (!editMode || !dragging.current) return;
-        e.stopPropagation();
-        groupRef.current?.position.set(e.point.x, 0, e.point.z);
+        onDragStart(groupRef);
       }}
     >
       <mesh
@@ -244,6 +270,7 @@ export function FactoryScene() {
   const [editMode, setEditMode] = useState(false);
   const [positions, setPositions] = useState<Record<string, [number, number, number]>>({});
   const machineList = Object.values(machines);
+  const dragState = useRef<DragState>({ draggingId: null, groupRef: null });
 
   const defaultPosition = useCallback((index: number): [number, number, number] => {
     const col = index % 5;
@@ -268,15 +295,21 @@ export function FactoryScene() {
     return positions[machine_id] ?? defaultPosition(index);
   };
 
-  const handleDragEnd = useCallback((machine_id: string, x: number, z: number) => {
-    const newPositions = { ...positions, [machine_id]: [x, 0, z] as [number, number, number] };
-    setPositions(newPositions);
-    const payload: Record<string, { x: number; z: number }> = {};
-    Object.entries(newPositions).forEach(([id, pos]) => {
-      payload[id] = { x: pos[0], z: pos[2] };
+  const handleDragEnd = useCallback((id: string, x: number, z: number) => {
+    setPositions((prev) => {
+      const next = { ...prev, [id]: [x, 0, z] as [number, number, number] };
+      const payload: Record<string, { x: number; z: number }> = {};
+      Object.entries(next).forEach(([mid, pos]) => {
+        payload[mid] = { x: pos[0], z: pos[2] };
+      });
+      axios.post(`${API_URL}/layout`, payload).catch(console.error);
+      return next;
     });
-    axios.post(`${API_URL}/layout`, payload).catch(console.error);
-  }, [positions]);
+  }, []);
+
+  const handleDragStart = useCallback((id: string, groupRef: React.RefObject<THREE.Group>) => {
+    dragState.current = { draggingId: id, groupRef };
+  }, []);
 
   const handleClick = (machine_id: string, position: [number, number, number]) => {
     if (editMode) return;
@@ -327,6 +360,7 @@ export function FactoryScene() {
           shadow-mapSize={[2048, 2048]}
         />
         <CameraController target={cameraTarget} />
+        <DragController dragState={dragState} onDragEnd={handleDragEnd} />
         <FloorSlab />
 
         {machineList.map((machine, index) => {
@@ -338,7 +372,8 @@ export function FactoryScene() {
             isSelected: selectedId === machine.machine_id,
             editMode,
             onClick: () => handleClick(machine.machine_id, position),
-            onDragEnd: (x: number, z: number) => handleDragEnd(machine.machine_id, x, z),
+            onDragStart: (ref: React.RefObject<THREE.Group>) =>
+              handleDragStart(machine.machine_id, ref),
           };
           if (index === 0) return <SampleMachine {...props} />;
           return <MachineBox {...props} />;
