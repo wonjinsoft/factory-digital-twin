@@ -49,15 +49,22 @@ function FloorSlab() {
 }
 
 // ─── 카메라 컨트롤러 ────────────────────────────────────
-function CameraController({ target }: { target: THREE.Vector3 | null }) {
+// target: Vector3 → 해당 기계로 이동 / "overview" → 전체보기로 복귀 / null → 현재 위치 유지
+type CameraTarget = THREE.Vector3 | "overview" | null;
+
+function CameraController({ target }: { target: CameraTarget }) {
   const { camera } = useThree();
   useSpring({
-    to: target
-      ? { x: target.x, y: target.y + 6, z: target.z + 8 }
-      : { x: 0, y: 15, z: 20 },
+    to: target === "overview"
+      ? { x: 0, y: 15, z: 20 }
+      : target
+        ? { x: target.x, y: target.y + 6, z: target.z + 8 }
+        : { x: 0, y: 15, z: 20 }, // null일 때는 onChange에서 무시
     onChange: ({ value }: any) => {
+      if (!target) return; // null → 카메라 그대로 유지
       camera.position.set(value.x, value.y, value.z);
-      if (target) camera.lookAt(target);
+      if (target === "overview") camera.lookAt(0, 0, 0);
+      else camera.lookAt(target as THREE.Vector3);
     },
     config: { mass: 1, tension: 80, friction: 20 },
   });
@@ -360,7 +367,14 @@ function MachineBox({
 export function FactoryScene() {
   const machines = useMachineStore((state) => state.machines);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [cameraTarget, setCameraTarget] = useState<THREE.Vector3 | null>(null);
+  const [cameraTarget, setCameraTarget] = useState<CameraTarget>(null);
+
+  // "overview" 애니메이션 완료 후 OrbitControls 재활성화
+  useEffect(() => {
+    if (cameraTarget !== "overview") return;
+    const t = setTimeout(() => setCameraTarget(null), 1200);
+    return () => clearTimeout(t);
+  }, [cameraTarget]);
   const [editMode, setEditMode] = useState(false);
   const [positions, setPositions] = useState<Record<string, [number, number, number]>>({});
   const machineList = Object.values(machines);
@@ -436,8 +450,24 @@ export function FactoryScene() {
     setCameraTarget(null);
   };
 
+  const handleOverview = () => {
+    setSelectedId(null);
+    setCameraTarget("overview");
+  };
+
   return (
     <div className="w-full h-full relative">
+      {/* 전체보기 버튼 */}
+      {!editMode && (
+        <div className="absolute top-4 left-4 z-10">
+          <button
+            onClick={handleOverview}
+            className="px-3 py-2 rounded-xl text-sm font-semibold bg-zinc-800 border border-zinc-600 text-zinc-200 hover:bg-zinc-700 transition-all"
+          >
+            ⌂ 전체보기
+          </button>
+        </div>
+      )}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         {editMode && (
           <button
@@ -504,7 +534,7 @@ export function FactoryScene() {
           return <MachineBox {...props} />;
         })}
 
-        <OrbitControls makeDefault enabled={!editMode && cameraTarget === null} />
+        <OrbitControls makeDefault enabled={!editMode && (cameraTarget === null)} />
       </Canvas>
     </div>
   );
