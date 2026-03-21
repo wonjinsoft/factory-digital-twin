@@ -243,7 +243,7 @@ function ConveyorBox({
 
 // ─── GLB 머신 ───────────────────────────────────────────
 function SampleMachine({
-  machine, position, isSelected, editMode, onClick, onDragStart,
+  machine, position, isSelected, editMode, onClick, onDragStart, onOverview,
 }: {
   machine: any;
   position: [number, number, number];
@@ -251,6 +251,7 @@ function SampleMachine({
   editMode: boolean;
   onClick: () => void;
   onDragStart: (groupRef: React.RefObject<THREE.Group>) => void;
+  onOverview: () => void;
 }) {
   const { scene } = useGLTF("/Glb Test/Glb Test.gltf");
   const cloned = useMemo(() => scene.clone(), [scene]);
@@ -315,7 +316,7 @@ function SampleMachine({
         </div>
       </Html>
       {isSelected && !editMode && (
-        <MachinePopup machine={machine} onClose={onClick} onOverview={handleOverview} />
+        <MachinePopup machine={machine} onClose={onClick} onOverview={onOverview} />
       )}
     </group>
   );
@@ -323,7 +324,7 @@ function SampleMachine({
 
 // ─── 박스 머신 ──────────────────────────────────────────
 function MachineBox({
-  machine, position, isSelected, editMode, onClick, onDragStart,
+  machine, position, isSelected, editMode, onClick, onDragStart, onOverview,
 }: {
   machine: any;
   position: [number, number, number];
@@ -331,6 +332,7 @@ function MachineBox({
   editMode: boolean;
   onClick: () => void;
   onDragStart: (groupRef: React.RefObject<THREE.Group>) => void;
+  onOverview: () => void;
 }) {
   const color = getMachineColor(machine.alarm_level, machine.power);
   const groupRef = useRef<THREE.Group>(null);
@@ -382,7 +384,7 @@ function MachineBox({
         </div>
       </Html>
       {isSelected && !editMode && (
-        <MachinePopup machine={machine} onClose={onClick} onOverview={handleOverview} />
+        <MachinePopup machine={machine} onClose={onClick} onOverview={onOverview} />
       )}
     </group>
   );
@@ -566,6 +568,7 @@ export function FactoryScene() {
             onClick: () => handleClick(machine.machine_id, position),
             onDragStart: (ref: React.RefObject<THREE.Group>) =>
               handleDragStart(machine.machine_id, ref),
+            onOverview: handleOverview,
           };
           if (index === 0) return <SampleMachine {...props} />;
           return <MachineBox {...props} />;
