@@ -32,8 +32,13 @@ Write-Host "[3/4] Mock Agent..." -ForegroundColor Yellow
 $agentCmd = "cd `"$ROOT`"; python agents/mock_agent.py"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $agentCmd
 
-# 4. Vite dev server (new window)
+# 4. Vite dev server (new window) — 5173 포트 선점 프로세스 제거 후 시작
 Write-Host "[4/4] Vite dev server..." -ForegroundColor Yellow
+$portPid = (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess
+if ($portPid) {
+    Write-Host "  Port 5173 in use (PID $portPid), killing..." -ForegroundColor Gray
+    Stop-Process -Id $portPid -Force -ErrorAction SilentlyContinue
+}
 $webCmd = "cd `"$ROOT\web`"; npm run dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $webCmd
 
