@@ -8,9 +8,10 @@ import { API_URL } from "../../config";
 interface Props {
   machine: any;
   onClose: () => void;
+  onOverview: () => void;
 }
 
-export function MachinePopup({ machine, onClose }: Props) {
+export function MachinePopup({ machine, onClose, onOverview }: Props) {
   const [loading, setLoading] = useState(false);
 
   const sendCommand = async (action: string) => {
@@ -33,12 +34,22 @@ export function MachinePopup({ machine, onClose }: Props) {
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-2">
           <span className="font-bold text-sm text-gray-800">{machine.machine_id}</span>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-lg border-none bg-transparent cursor-pointer"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onOverview}
+              title="전체보기"
+              className="text-gray-400 hover:text-blue-500 text-sm border-none bg-transparent cursor-pointer px-1"
+            >
+              ⌂
+            </button>
+            <button
+              onClick={onClose}
+              title="닫기"
+              className="text-gray-400 hover:text-gray-600 text-lg border-none bg-transparent cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* 상태 정보 */}

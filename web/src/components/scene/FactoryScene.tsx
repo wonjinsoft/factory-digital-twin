@@ -315,7 +315,7 @@ function SampleMachine({
         </div>
       </Html>
       {isSelected && !editMode && (
-        <MachinePopup machine={machine} onClose={onClick} />
+        <MachinePopup machine={machine} onClose={onClick} onOverview={handleOverview} />
       )}
     </group>
   );
@@ -382,7 +382,7 @@ function MachineBox({
         </div>
       </Html>
       {isSelected && !editMode && (
-        <MachinePopup machine={machine} onClose={onClick} />
+        <MachinePopup machine={machine} onClose={onClick} onOverview={handleOverview} />
       )}
     </group>
   );
