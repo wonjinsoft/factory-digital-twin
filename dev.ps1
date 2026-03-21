@@ -15,6 +15,17 @@ Write-Host "[2/4] podman-compose up..." -ForegroundColor Yellow
 Set-Location $ROOT
 podman-compose up -d
 
+# Redis 준비될 때까지 대기 (최대 30초)
+Write-Host "  Waiting for Redis..." -ForegroundColor Gray
+$ready = $false
+for ($i = 0; $i -lt 30; $i++) {
+    $result = podman exec factory-digital-twin_redis_1 redis-cli ping 2>$null
+    if ($result -eq "PONG") { $ready = $true; break }
+    Start-Sleep -Seconds 1
+}
+if ($ready) { Write-Host "  Redis ready." -ForegroundColor Gray }
+else { Write-Host "  Redis not responding, starting agent anyway..." -ForegroundColor Red }
+
 # 3. Mock Agent (new window)
 Write-Host "[3/4] Mock Agent..." -ForegroundColor Yellow
 $agentCmd = "cd `"$ROOT`"; python agents/mock_agent.py"

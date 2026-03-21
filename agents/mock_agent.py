@@ -54,7 +54,22 @@ async def update_state(redis, machine_id: str) -> dict:
 
 async def run():
     """메인 루프 — 1초마다 20대 기계 상태를 Redis에 저장"""
-    redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
+    # Redis 연결 재시도 (컨테이너 기동 지연 대비)
+    redis = None
+    for attempt in range(1, 16):
+        try:
+            client = await aioredis.from_url(REDIS_URL, decode_responses=True)
+            await client.ping()
+            redis = client
+            print(f"Redis 연결 성공 (시도 {attempt}회)", flush=True)
+            break
+        except Exception as e:
+            print(f"Redis 연결 대기 중... ({attempt}/15) {e}", flush=True)
+            await asyncio.sleep(2)
+
+    if redis is None:
+        print("Redis 연결 실패 — 종료합니다.", flush=True)
+        return
 
     machine_ids = [f"M{i:03d}" for i in range(1, MACHINE_COUNT + 1)]
     print(f"Mock 에이전트 시작 — 기계 {MACHINE_COUNT}대", flush=True)
