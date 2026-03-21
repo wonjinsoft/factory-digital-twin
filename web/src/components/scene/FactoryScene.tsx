@@ -368,11 +368,18 @@ export function FactoryScene() {
   const machines = useMachineStore((state) => state.machines);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cameraTarget, setCameraTarget] = useState<CameraTarget>(null);
+  const orbitRef = useRef<any>(null);
 
-  // "overview" 애니메이션 완료 후 OrbitControls 재활성화
+  // "overview" 애니메이션 완료 후 OrbitControls 재활성화 + orbit target 초기화
   useEffect(() => {
     if (cameraTarget !== "overview") return;
-    const t = setTimeout(() => setCameraTarget(null), 1200);
+    const t = setTimeout(() => {
+      if (orbitRef.current) {
+        orbitRef.current.target.set(0, 0, 0);
+        orbitRef.current.update();
+      }
+      setCameraTarget(null);
+    }, 1200);
     return () => clearTimeout(t);
   }, [cameraTarget]);
   const [editMode, setEditMode] = useState(false);
@@ -431,6 +438,11 @@ export function FactoryScene() {
   const handleClick = (machine_id: string, position: [number, number, number]) => {
     if (editMode) return;
     if (selectedId === machine_id) {
+      // 팝업 닫기 전에 orbit target을 기계 위치로 동기화 → 시선 틀어짐 방지
+      if (orbitRef.current) {
+        orbitRef.current.target.set(position[0], position[1], position[2]);
+        orbitRef.current.update();
+      }
       setSelectedId(null);
       setCameraTarget(null);
     } else {
@@ -534,7 +546,7 @@ export function FactoryScene() {
           return <MachineBox {...props} />;
         })}
 
-        <OrbitControls makeDefault enabled={!editMode && (cameraTarget === null)} />
+        <OrbitControls ref={orbitRef} makeDefault enabled={!editMode && (cameraTarget === null)} />
       </Canvas>
     </div>
   );
