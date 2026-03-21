@@ -59,7 +59,7 @@ function CameraController({ target }: { target: CameraTarget }) {
       ? { x: 0, y: 15, z: 20 }
       : target
         ? { x: target.x, y: target.y + 6, z: target.z + 8 }
-        : { x: 0, y: 15, z: 20 }, // null일 때는 onChange에서 무시
+        : { x: 0, y: -999, z: 0 }, // null: 더미값(onChange에서 무시), overview와 달라야 스프링 재실행됨
     onChange: ({ value }: any) => {
       if (!target) return; // null → 카메라 그대로 유지
       camera.position.set(value.x, value.y, value.z);
