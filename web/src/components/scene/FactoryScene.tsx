@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, useGLTF } from "@react-three/drei";
-import { useSpring } from "@react-spring/three";
 import { useMachineStore } from "../../stores/machineStore";
 import { MachinePopup } from "./MachinePopup";
 import axios from "axios";
@@ -52,62 +51,46 @@ function FloorSlab() {
 // target: Vector3 → 해당 기계로 이동 / "overview" → 전체보기로 복귀 / null → 현재 위치 유지
 type CameraTarget = THREE.Vector3 | "overview" | null;
 
+// lerp 속도: 매 프레임 5% 이동 → 약 1.2초에 99% 도달
+const CAM_SPEED = 0.05;
+
 function CameraController({ target }: { target: CameraTarget }) {
   const { camera } = useThree();
   const targetRef = useRef(target);
   targetRef.current = target;
-  const isOverview = useRef(false);
 
-  // 위치 스프링
-  const [{ x, y, z }, posApi] = useSpring(() => ({
-    x: camera.position.x,
-    y: camera.position.y,
-    z: camera.position.z,
-    config: { mass: 1, tension: 80, friction: 20 },
-  }));
+  // 목표 위치·시선 (ref → React 재렌더에 독립적)
+  const goalPos  = useRef(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z));
+  const goalLook = useRef(new THREE.Vector3(0, 0, 0));
+  // 현재 보간 중인 시선 포인트
+  const curLook  = useRef(new THREE.Vector3(0, 0, 0));
 
-  // lookAt 스프링 — 전체보기 전환 시 시선을 보간해 회전 없이 뒤로 물러나는 효과
-  const [{ lx, ly, lz }, lookApi] = useSpring(() => ({
-    lx: 0, ly: 0, lz: 0,
-    config: { mass: 1, tension: 80, friction: 20 },
-  }));
-
+  // 카메라 초기 시선 포인트 설정
   useEffect(() => {
-    if (!target) { isOverview.current = false; return; }
-
-    // 현재 카메라가 바라보는 지점 계산 (10 유닛 앞)
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
-    const curLook = camera.position.clone().addScaledVector(dir, 10);
+    curLook.current.copy(camera.position).addScaledVector(dir, 10);
+  }, []);
 
+  // target이 바뀔 때만 목표값 갱신
+  useEffect(() => {
+    if (!target) return;
     if (target === "overview") {
-      isOverview.current = true;
-      posApi.start({
-        from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-        x: 0, y: 15, z: 20,
-      });
-      lookApi.start({
-        from: { lx: curLook.x, ly: curLook.y, lz: curLook.z },
-        lx: 0, ly: 0, lz: 0,
-      });
+      goalPos.current.set(0, 15, 20);
+      goalLook.current.set(0, 0, 0);
     } else {
-      isOverview.current = false;
       const t = target as THREE.Vector3;
-      posApi.start({
-        from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-        x: t.x, y: t.y + 6, z: t.z + 8,
-      });
+      goalPos.current.set(t.x, t.y + 6, t.z + 8);
+      goalLook.current.copy(t);
     }
   }, [target]);
 
+  // 매 프레임 lerp — React 상태 변화에 완전 독립
   useFrame(() => {
     if (!targetRef.current) return;
-    camera.position.set(x.get(), y.get(), z.get());
-    if (isOverview.current) {
-      camera.lookAt(lx.get(), ly.get(), lz.get());
-    } else {
-      camera.lookAt(targetRef.current as THREE.Vector3);
-    }
+    camera.position.lerp(goalPos.current, CAM_SPEED);
+    curLook.current.lerp(goalLook.current, CAM_SPEED);
+    camera.lookAt(curLook.current);
   });
 
   return null;
