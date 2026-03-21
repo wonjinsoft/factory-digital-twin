@@ -26,7 +26,10 @@ export function MachinePopup({ machine, onClose }: Props) {
 
   return (
     <Html position={[0, 2.5, 0]} center distanceFactor={8}>
-      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-48">
+      <div
+        className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-48"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-2">
           <span className="font-bold text-sm text-gray-800">{machine.machine_id}</span>
