@@ -27,6 +27,9 @@ for ($i = 0; $i -lt 30; $i++) {
 if ($ready) { Write-Host "  Redis ready." -ForegroundColor Gray }
 else { Write-Host "  Redis not responding, starting agent anyway..." -ForegroundColor Red }
 
+# pause 플래그 초기화 (이전 세션에서 Agent 정지 상태로 종료했을 경우 대비)
+podman-compose exec redis redis-cli SET "factory:control:mock_agent:paused" "false" 2>$null | Out-Null
+
 # 3. Mock Agent (new window)
 Write-Host "[3/4] Mock Agent..." -ForegroundColor Yellow
 $agentCmd = "cd `"$ROOT`"; python agents/mock_agent.py"
