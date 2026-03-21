@@ -54,20 +54,36 @@ type CameraTarget = THREE.Vector3 | "overview" | null;
 
 function CameraController({ target }: { target: CameraTarget }) {
   const { camera } = useThree();
-  useSpring({
-    to: target === "overview"
-      ? { x: 0, y: 15, z: 20 }
-      : target
-        ? { x: target.x, y: target.y + 6, z: target.z + 8 }
-        : { x: 0, y: -999, z: 0 }, // null: 더미값(onChange에서 무시), overview와 달라야 스프링 재실행됨
-    onChange: ({ value }: any) => {
-      if (!target) return; // null → 카메라 그대로 유지
-      camera.position.set(value.x, value.y, value.z);
-      if (target === "overview") camera.lookAt(0, 0, 0);
-      else camera.lookAt(target as THREE.Vector3);
-    },
+  const targetRef = useRef(target);
+  targetRef.current = target;
+
+  const [{ x, y, z }, api] = useSpring(() => ({
+    x: camera.position.x,
+    y: camera.position.y,
+    z: camera.position.z,
     config: { mass: 1, tension: 80, friction: 20 },
+  }));
+
+  // target이 바뀔 때 현재 카메라 위치에서 시작해 목적지로 애니메이션
+  useEffect(() => {
+    if (!target) return;
+    const to = target === "overview"
+      ? { x: 0, y: 15, z: 20 }
+      : { x: (target as THREE.Vector3).x, y: (target as THREE.Vector3).y + 6, z: (target as THREE.Vector3).z + 8 };
+    api.start({
+      from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      ...to,
+    });
+  }, [target]);
+
+  // 매 프레임 스프링 값을 카메라에 반영 (target=null이면 OrbitControls에 맡김)
+  useFrame(() => {
+    if (!targetRef.current) return;
+    camera.position.set(x.get(), y.get(), z.get());
+    if (targetRef.current === "overview") camera.lookAt(0, 0, 0);
+    else camera.lookAt(targetRef.current as THREE.Vector3);
   });
+
   return null;
 }
 
