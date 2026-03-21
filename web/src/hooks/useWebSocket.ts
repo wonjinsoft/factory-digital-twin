@@ -4,9 +4,11 @@ import { useEffect, useRef } from "react";
 import { WS_URL } from "../config";
 import { useMachineStore } from "../stores/machineStore";
 
-export function useWebSocket() {
+export function useWebSocket(onAgentStatus?: (paused: boolean) => void) {
   const ws = useRef<WebSocket | null>(null);
   const updateMachine = useMachineStore((state) => state.updateMachine);
+  const onAgentStatusRef = useRef(onAgentStatus);
+  onAgentStatusRef.current = onAgentStatus;
 
   useEffect(() => {
     function connect() {
@@ -20,6 +22,8 @@ export function useWebSocket() {
         const msg = JSON.parse(event.data);
         if (msg.type === "state_update") {
           updateMachine(msg.data);
+        } else if (msg.type === "agent_status") {
+          onAgentStatusRef.current?.(msg.data.paused);
         }
       };
 

@@ -16,7 +16,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "3d">("dashboard");
   // ✅ 추가
   const [agentPaused, setAgentPaused] = useState(false);
-  useWebSocket();
+  useWebSocket((paused) => setAgentPaused(paused));
 
   useEffect(() => {
     axios.get(`${API_URL}/machines`)
