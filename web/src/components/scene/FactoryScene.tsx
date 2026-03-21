@@ -56,32 +56,58 @@ function CameraController({ target }: { target: CameraTarget }) {
   const { camera } = useThree();
   const targetRef = useRef(target);
   targetRef.current = target;
+  const isOverview = useRef(false);
 
-  const [{ x, y, z }, api] = useSpring(() => ({
+  // 위치 스프링
+  const [{ x, y, z }, posApi] = useSpring(() => ({
     x: camera.position.x,
     y: camera.position.y,
     z: camera.position.z,
     config: { mass: 1, tension: 80, friction: 20 },
   }));
 
-  // target이 바뀔 때 현재 카메라 위치에서 시작해 목적지로 애니메이션
+  // lookAt 스프링 — 전체보기 전환 시 시선을 보간해 회전 없이 뒤로 물러나는 효과
+  const [{ lx, ly, lz }, lookApi] = useSpring(() => ({
+    lx: 0, ly: 0, lz: 0,
+    config: { mass: 1, tension: 80, friction: 20 },
+  }));
+
   useEffect(() => {
-    if (!target) return;
-    const to = target === "overview"
-      ? { x: 0, y: 15, z: 20 }
-      : { x: (target as THREE.Vector3).x, y: (target as THREE.Vector3).y + 6, z: (target as THREE.Vector3).z + 8 };
-    api.start({
-      from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-      ...to,
-    });
+    if (!target) { isOverview.current = false; return; }
+
+    // 현재 카메라가 바라보는 지점 계산 (10 유닛 앞)
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const curLook = camera.position.clone().addScaledVector(dir, 10);
+
+    if (target === "overview") {
+      isOverview.current = true;
+      posApi.start({
+        from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        x: 0, y: 15, z: 20,
+      });
+      lookApi.start({
+        from: { lx: curLook.x, ly: curLook.y, lz: curLook.z },
+        lx: 0, ly: 0, lz: 0,
+      });
+    } else {
+      isOverview.current = false;
+      const t = target as THREE.Vector3;
+      posApi.start({
+        from: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        x: t.x, y: t.y + 6, z: t.z + 8,
+      });
+    }
   }, [target]);
 
-  // 매 프레임 스프링 값을 카메라에 반영 (target=null이면 OrbitControls에 맡김)
   useFrame(() => {
     if (!targetRef.current) return;
     camera.position.set(x.get(), y.get(), z.get());
-    if (targetRef.current === "overview") camera.lookAt(0, 0, 0);
-    else camera.lookAt(targetRef.current as THREE.Vector3);
+    if (isOverview.current) {
+      camera.lookAt(lx.get(), ly.get(), lz.get());
+    } else {
+      camera.lookAt(targetRef.current as THREE.Vector3);
+    }
   });
 
   return null;
@@ -288,7 +314,7 @@ function SampleMachine({
         scale={10}
         position={[0, -1, 0]}
         onClick={(e: any) => {
-          if (editMode) return;
+          if (editMode || isSelected) return; // 팝업 열려있을 때 클릭 무시
           e.stopPropagation();
           onClick();
         }}
@@ -344,7 +370,7 @@ function MachineBox({
       <mesh
         castShadow
         onClick={(e) => {
-          if (editMode) return;
+          if (editMode || isSelected) return; // 팝업 열려있을 때 클릭 무시
           e.stopPropagation();
           onClick();
         }}
