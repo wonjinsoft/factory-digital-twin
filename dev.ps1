@@ -8,7 +8,8 @@ Write-Host "=== Factory Digital Twin Dev Start ===" -ForegroundColor Cyan
 
 # 1. Podman VM
 Write-Host "[1/4] Podman machine start..." -ForegroundColor Yellow
-podman machine start
+podman machine start 2>&1 | Out-Null
+Write-Host "  OK" -ForegroundColor Gray
 
 # 2. Containers
 Write-Host "[2/4] podman-compose up..." -ForegroundColor Yellow
@@ -19,8 +20,8 @@ podman-compose up -d
 Write-Host "  Waiting for Redis..." -ForegroundColor Gray
 $ready = $false
 for ($i = 0; $i -lt 30; $i++) {
-    $result = podman exec factory-digital-twin_redis_1 redis-cli ping 2>$null
-    if ($result -eq "PONG") { $ready = $true; break }
+    $result = podman-compose exec redis redis-cli ping 2>$null
+    if ($result -match "PONG") { $ready = $true; break }
     Start-Sleep -Seconds 1
 }
 if ($ready) { Write-Host "  Redis ready." -ForegroundColor Gray }
