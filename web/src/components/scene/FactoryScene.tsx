@@ -16,6 +16,7 @@ function getMachineColor(alarmLevel: string, power: string): string {
   return "#22c55e";
 }
 
+// ─── 바닥 ───────────────────────────────────────────────
 function FloorSlab() {
   return (
     <group position={[0, -0.75, 0]}>
@@ -47,6 +48,7 @@ function FloorSlab() {
   );
 }
 
+// ─── 카메라 컨트롤러 ────────────────────────────────────
 function CameraController({ target }: { target: THREE.Vector3 | null }) {
   const { camera } = useThree();
   useSpring({
@@ -62,7 +64,7 @@ function CameraController({ target }: { target: THREE.Vector3 | null }) {
   return null;
 }
 
-// 드래그 상태를 씬 전체에서 공유하는 ref
+// ─── 드래그 컨트롤러 ────────────────────────────────────
 interface DragState {
   draggingId: string | null;
   groupRef: React.RefObject<THREE.Group> | null;
@@ -120,6 +122,94 @@ function DragController({
   return null;
 }
 
+// ─── 컨베이어 박스 ──────────────────────────────────────
+const START_POSITION = new THREE.Vector3(-14, 0.5, -10);
+const LERP_SPEED = 0.05;
+const ARRIVE_THRESHOLD = 0.15;
+
+function ConveyorBox({
+  machinePositions,
+}: {
+  machinePositions: Record<string, [number, number, number]>;
+}) {
+  const machines = useMachineStore((state) => state.machines);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const currentPos = useRef(START_POSITION.clone());
+  const waypointQueue = useRef<THREE.Vector3[]>([]);
+  const prevLoaded = useRef<Record<string, string>>({});
+  const isMoving = useRef(false);
+
+  // material_loaded 변화 감지 → 웨이포인트 추가
+  useEffect(() => {
+    const machineList = Object.values(machines).sort((a, b) =>
+      a.machine_id.localeCompare(b.machine_id)
+    );
+
+    let triggered = false;
+    machineList.forEach((m) => {
+      const prev = prevLoaded.current[m.machine_id];
+      if (prev === "false" && m.material_loaded === "true") {
+        triggered = true;
+      }
+      prevLoaded.current[m.machine_id] = m.material_loaded;
+    });
+
+    if (!triggered) return;
+
+    // 이미 이동 중이면 큐에 추가하지 않음 (한 사이클만)
+    if (isMoving.current) return;
+
+    // 웨이포인트: 모든 머신 순서대로 경유 → 시작점 복귀
+    const waypoints: THREE.Vector3[] = machineList
+      .filter((m) => machinePositions[m.machine_id])
+      .map((m) => {
+        const [x, , z] = machinePositions[m.machine_id];
+        return new THREE.Vector3(x, 0.5, z);
+      });
+    waypoints.push(START_POSITION.clone());
+
+    waypointQueue.current = waypoints;
+    isMoving.current = true;
+  }, [machines, machinePositions]);
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+
+    // 이동 중 아니면 시작 위치 유지
+    if (!isMoving.current || waypointQueue.current.length === 0) {
+      meshRef.current.position.copy(currentPos.current);
+      return;
+    }
+
+    const target = waypointQueue.current[0];
+    currentPos.current.lerp(target, LERP_SPEED);
+    meshRef.current.position.copy(currentPos.current);
+
+    // 웨이포인트 도달 확인
+    if (currentPos.current.distanceTo(target) < ARRIVE_THRESHOLD) {
+      waypointQueue.current.shift();
+      if (waypointQueue.current.length === 0) {
+        isMoving.current = false;
+        currentPos.current.copy(START_POSITION);
+      }
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} position={START_POSITION} castShadow>
+      <boxGeometry args={[0.8, 0.8, 0.8]} />
+      <meshStandardMaterial
+        color="#3b82f6"
+        emissive="#1d4ed8"
+        emissiveIntensity={0.3}
+        metalness={0.3}
+        roughness={0.4}
+      />
+    </mesh>
+  );
+}
+
+// ─── GLB 머신 ───────────────────────────────────────────
 function SampleMachine({
   machine, position, isSelected, editMode, onClick, onDragStart,
 }: {
@@ -199,6 +289,7 @@ function SampleMachine({
   );
 }
 
+// ─── 박스 머신 ──────────────────────────────────────────
 function MachineBox({
   machine, position, isSelected, editMode, onClick, onDragStart,
 }: {
@@ -265,6 +356,7 @@ function MachineBox({
   );
 }
 
+// ─── 메인 씬 ────────────────────────────────────────────
 export function FactoryScene() {
   const machines = useMachineStore((state) => state.machines);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -286,7 +378,7 @@ export function FactoryScene() {
         const layout = res.data.layout;
         const loaded: Record<string, [number, number, number]> = {};
         Object.entries(layout).forEach(([id, pos]: any) => {
-          loaded[id] = [pos.x, 0, pos.z];
+          loaded[id] = [pos.x, 0.01, pos.z];
         });
         setPositions(loaded);
       })
@@ -297,9 +389,18 @@ export function FactoryScene() {
     return positions[machine_id] ?? defaultPosition(index);
   };
 
+  // ConveyorBox에 넘길 머신 위치 맵
+  const machinePositions = useMemo(() => {
+    const map: Record<string, [number, number, number]> = {};
+    machineList.forEach((m, i) => {
+      map[m.machine_id] = getPosition(m.machine_id, i);
+    });
+    return map;
+  }, [positions, machineList.length]);
+
   const handleDragEnd = useCallback((id: string, x: number, z: number) => {
     setPositions((prev) => {
-      const next = { ...prev, [id]: [x, 0, z] as [number, number, number] };
+      const next = { ...prev, [id]: [x, 0.01, z] as [number, number, number] };
       const payload: Record<string, { x: number; z: number }> = {};
       Object.entries(next).forEach(([mid, pos]) => {
         payload[mid] = { x: pos[0], z: pos[2] };
@@ -324,28 +425,28 @@ export function FactoryScene() {
     }
   };
 
+  const resetLayout = async () => {
+    await axios.post(`${API_URL}/layout`, {}).catch(console.error);
+    setPositions({});
+  };
+
   const toggleEditMode = () => {
     setEditMode((v) => !v);
     setSelectedId(null);
     setCameraTarget(null);
   };
 
-  const resetLayout = async () => {
-   await axios.post(`${API_URL}/layout`, {}).catch(console.error);
-    setPositions({});
-  };
-
   return (
     <div className="w-full h-full relative">
-      <div className="absolute top-4 right-4 z-10">
-  {editMode && (
-    <button
-      onClick={resetLayout}
-      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-zinc-800 border-red-600 text-red-400 hover:bg-red-900 transition-all"
-    >
-      ↺ 초기화
-    </button>
-  )}     
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        {editMode && (
+          <button
+            onClick={resetLayout}
+            className="px-4 py-2 rounded-xl text-sm font-semibold border bg-zinc-800 border-red-600 text-red-400 hover:bg-red-900 transition-all"
+          >
+            ↺ 초기화
+          </button>
+        )}
         <button
           onClick={toggleEditMode}
           className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
@@ -383,6 +484,9 @@ export function FactoryScene() {
         <CameraController target={cameraTarget} />
         <DragController dragState={dragState} onDragEnd={handleDragEnd} />
         <FloorSlab />
+
+        {/* 컨베이어 박스 */}
+        <ConveyorBox machinePositions={machinePositions} />
 
         {machineList.map((machine, index) => {
           const position = getPosition(machine.machine_id, index);
