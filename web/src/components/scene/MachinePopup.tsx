@@ -26,7 +26,7 @@ export function MachinePopup({ machine, onClose, onOverview }: Props) {
   };
 
   return (
-    <Html position={[0, 2.5, 0]} center distanceFactor={8}>
+    <Html position={[0, 1.0, 0]} center distanceFactor={8}>
       <div
         className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-48"
         onPointerDown={(e) => e.stopPropagation()}
