@@ -52,7 +52,7 @@ export function ControlPanel({ machine, onClose }: Props) {
       </div>
 
       {/* 버튼 그리드 */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {buttons.map(({ label, action, color, disabled }) => (
           <button
             key={action}

@@ -529,8 +529,8 @@ export function FactoryScene() {
       </div>
 
       {editMode && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="bg-yellow-400/90 text-black text-xs font-semibold px-4 py-2 rounded-full">
+        <div className="absolute top-14 left-0 right-0 flex justify-center px-4 z-10">
+          <div className="bg-yellow-400/90 text-black text-xs font-semibold px-4 py-2 rounded-full text-center max-w-xs w-full sm:w-auto">
             기계를 드래그해서 위치를 조정하세요 — 자동 저장됩니다
           </div>
         </div>

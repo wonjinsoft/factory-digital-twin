@@ -51,28 +51,29 @@ function App() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
 
       {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex flex-wrap justify-between items-center gap-y-2">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">
             🏭 Factory Digital Twin
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-0.5">
             기계 {machineList.length}대 모니터링 중
           </p>
         </div>
 
         {/* 탭 + Agent 제어 버튼 */}
-        <div className="flex gap-2 items-center">
-          {/* ✅ 추가: Agent 토글 버튼 */}
+        <div className="flex gap-2 items-center flex-wrap justify-end">
+          {/* Agent 토글 버튼 */}
           <button
             onClick={toggleAgent}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
               agentPaused
                 ? "bg-green-500 hover:bg-green-600 text-white"
                 : "bg-red-500 hover:bg-red-600 text-white"
             }`}
           >
-            {agentPaused ? "▶ Agent 재개" : "⏸ Agent 정지"}
+            <span className="hidden sm:inline">{agentPaused ? "▶ Agent 재개" : "⏸ Agent 정지"}</span>
+            <span className="sm:hidden">{agentPaused ? "▶ 재개" : "⏸ 정지"}</span>
           </button>
 
           {/* 구분선 */}
@@ -80,23 +81,25 @@ function App() {
 
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`px-4 py-2 rounded-lg font-medium ${
+            className={`px-3 py-2 rounded-lg font-medium text-sm ${
               activeTab === "dashboard"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            📊 대시보드
+            <span className="hidden sm:inline">📊 대시보드</span>
+            <span className="sm:hidden">📊</span>
           </button>
           <button
             onClick={() => setActiveTab("3d")}
-            className={`px-4 py-2 rounded-lg font-medium ${
+            className={`px-3 py-2 rounded-lg font-medium text-sm ${
               activeTab === "3d"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            🏭 3D 뷰
+            <span className="hidden sm:inline">🏭 3D 뷰</span>
+            <span className="sm:hidden">🏭</span>
           </button>
         </div>
       </div>
@@ -106,12 +109,12 @@ function App() {
 
         {/* 대시보드 탭 */}
         {activeTab === "dashboard" && (
-          <>
-            <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className="flex-1 p-4 md:p-6 overflow-y-auto">
               {machineList.length === 0 ? (
                 <p className="text-gray-400">기계 데이터 불러오는 중...</p>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                   {machineList.map((machine) => (
                     <div
                       key={machine.machine_id}
@@ -125,7 +128,7 @@ function App() {
               )}
             </div>
             <AlarmPanel />
-          </>
+          </div>
         )}
 
         {/* 3D 뷰 탭 */}
