@@ -37,7 +37,7 @@ export function AlarmPanel() {
   };
 
   return (
-    <div className="w-full max-h-56 md:max-h-none md:w-72 md:shrink-0 bg-white/[0.02] border-t md:border-t-0 md:border-l border-white/7 p-4 md:p-5 overflow-y-auto">
+    <div className="w-full shrink-0 max-h-48 md:max-h-none md:w-72 bg-white/[0.02] border-t md:border-t-0 md:border-l border-white/7 p-4 md:p-5 overflow-y-auto">
       {/* 헤더 */}
       <div className="flex items-center gap-2 mb-5">
         <span className="text-[15px] font-semibold text-[#f5f5f7]">알람</span>

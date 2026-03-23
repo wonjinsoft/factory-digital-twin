@@ -110,7 +110,7 @@ function App() {
         {/* 대시보드 탭 */}
         {activeTab === "dashboard" && (
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-            <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+            <div className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto">
               {machineList.length === 0 ? (
                 <p className="text-gray-400">기계 데이터 불러오는 중...</p>
               ) : (
