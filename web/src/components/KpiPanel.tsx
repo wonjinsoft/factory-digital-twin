@@ -12,7 +12,6 @@ export function KpiPanel() {
   const running = list.filter((m) => m.power === "on").length;
   const stopped = total - running;
   const criticalCount = list.filter((m) => m.alarm_level === "critical").length;
-  const warningCount = list.filter((m) => m.alarm_level === "warning").length;
   const uptimeRate = total > 0 ? ((running / total) * 100).toFixed(1) : "0";
 
   const avgTemp = (

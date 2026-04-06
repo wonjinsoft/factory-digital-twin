@@ -289,7 +289,7 @@ export function SampleMachine({
         object={cloned}
         scale={10}
         position={[0, -1, 0]}
-        onClick={(e: THREE.Event) => {
+        onClick={(e: { stopPropagation: () => void }) => {
           if (editMode || isSelected) return;
           e.stopPropagation();
           onClick();
