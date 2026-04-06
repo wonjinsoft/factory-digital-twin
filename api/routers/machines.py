@@ -5,6 +5,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.redis_service import get_machine_state, get_all_machine_ids, set_machine_field
+from routers.events import record_event
 
 router = APIRouter()
 
@@ -54,4 +55,5 @@ async def control_machine(machine_id: str, cmd: ControlCommand):
     else:
         raise HTTPException(status_code=400, detail=f"알 수 없는 명령: {cmd.action}")
 
+    await record_event(machine_id, "control", cmd.action)
     return {"ok": True, "machine_id": machine_id, "action": cmd.action}

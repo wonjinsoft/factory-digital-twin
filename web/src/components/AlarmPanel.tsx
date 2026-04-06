@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
+import { EventTimeline } from "./EventTimeline";
 
 interface Alarm {
   machine_id: string;
@@ -94,6 +95,14 @@ export function AlarmPanel() {
           })}
         </div>
       )}
+
+      {/* 이벤트 이력 */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[15px] font-semibold text-[#f5f5f7]">이력</span>
+        </div>
+        <EventTimeline />
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@
 """
 from fastapi import APIRouter, HTTPException
 from services.redis_service import get_all_machine_ids, get_machine_state, set_machine_field
+from routers.events import record_event
 
 router = APIRouter()
 
@@ -37,5 +38,6 @@ async def acknowledge_alarm(machine_id: str):
 
     await set_machine_field(machine_id, "alarm_level", "none")
     await set_machine_field(machine_id, "error_code", "E000")
+    await record_event(machine_id, "alarm", f"acknowledged ({state.get('alarm_level', '')} / {state.get('error_code', '')})")
 
     return {"ok": True, "machine_id": machine_id, "message": "알람 확인 처리 완료"}

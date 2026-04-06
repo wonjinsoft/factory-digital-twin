@@ -11,6 +11,7 @@ from routers.alarms import router as alarms_router
 from routers.websocket import router as ws_router
 from routers.agent_control import router as agent_control_router
 from routers.layout import router as layout_router
+from routers.events import router as events_router
 
 app = FastAPI(
     title="Factory Digital Twin API",
@@ -40,16 +41,10 @@ app.include_router(alarms_router)
 app.include_router(ws_router)
 app.include_router(agent_control_router)
 app.include_router(layout_router)
+app.include_router(events_router)
 
 @app.get("/health")
 async def health_check():
     """헬스체크 엔드포인트"""
     return {"status": "ok", "site_id": settings.SITE_ID, "version": "v0.1"}
 
-@app.get("/debug")
-async def debug():
-    """환경변수 확인용"""
-    return {
-        "redis_url": settings.REDIS_URL,
-        "get_redis_url": settings.get_redis_url(),
-    }

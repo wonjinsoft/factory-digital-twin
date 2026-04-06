@@ -9,6 +9,7 @@ import { MachineCard } from "./components/MachineCard";
 import { ControlPanel } from "./components/ControlPanel";
 import { AlarmPanel } from "./components/AlarmPanel";
 import { FactoryScene } from "./components/scene/FactoryScene";
+import { KpiPanel } from "./components/KpiPanel";
 
 function App() {
   const { machines, setMachines } = useMachineStore();
@@ -16,7 +17,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "3d">("dashboard");
   // ✅ 추가
   const [agentPaused, setAgentPaused] = useState(false);
-  useWebSocket((paused) => setAgentPaused(paused));
+  const wsStatus = useWebSocket((paused) => setAgentPaused(paused));
 
   useEffect(() => {
     axios.get(`${API_URL}/machines`)
@@ -56,8 +57,24 @@ function App() {
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">
             🏭 Factory Digital Twin
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <p className="text-gray-500 text-sm mt-0.5 flex items-center gap-2">
             기계 {machineList.length}대 모니터링 중
+            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+              wsStatus === "connected"
+                ? "bg-green-100 text-green-700"
+                : wsStatus === "connecting"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-red-100 text-red-700"
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                wsStatus === "connected"
+                  ? "bg-green-500"
+                  : wsStatus === "connecting"
+                  ? "bg-yellow-500 animate-pulse"
+                  : "bg-red-500"
+              }`} />
+              {wsStatus === "connected" ? "실시간" : wsStatus === "connecting" ? "연결 중..." : "연결 끊김"}
+            </span>
           </p>
         </div>
 
@@ -103,6 +120,9 @@ function App() {
           </button>
         </div>
       </div>
+
+      {/* KPI 요약 */}
+      {activeTab === "dashboard" && <KpiPanel />}
 
       {/* 컨텐츠 영역 */}
       <div className="flex-1 flex overflow-hidden">
