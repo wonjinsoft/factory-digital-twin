@@ -56,3 +56,57 @@ async def set_machine_field(machine_id: str, field: str, value: str) -> None:
         settings.pubsub_channel(),
         json.dumps(state)
     )
+
+
+# ── Device (스마트폰 등 외부 기기) ──────────────────────────────────────
+
+async def get_device_state(device_id: str) -> dict | None:
+    """Redis에서 디바이스 1대 상태 조회"""
+    redis = await get_redis()
+    key = settings.device_state_key(device_id)
+    data = await redis.hgetall(key)
+    if not data:
+        return None
+    return data
+
+
+async def get_all_device_ids() -> list[str]:
+    """Redis에 등록된 모든 디바이스 ID 목록 반환"""
+    redis = await get_redis()
+    pattern = f"factory:{settings.SITE_ID}:device:*:state"
+    keys = []
+    async for key in redis.scan_iter(match=pattern):
+        device_id = key.split(":")[3]
+        keys.append(device_id)
+    return sorted(keys)
+
+
+async def set_device_field(device_id: str, field: str, value: str) -> None:
+    """Redis Hash에서 디바이스 상태 필드 변경 + Pub/Sub 발행"""
+    redis = await get_redis()
+    key = settings.device_state_key(device_id)
+    await redis.hset(key, field, value)
+    state = await redis.hgetall(key)
+    await redis.publish(
+        settings.device_pubsub_channel(),
+        json.dumps(state)
+    )
+
+
+async def init_device(device_id: str, device_type: str) -> dict:
+    """디바이스 최초 등록 (키가 없을 때만 초기화)"""
+    redis = await get_redis()
+    key = settings.device_state_key(device_id)
+    exists = await redis.exists(key)
+    if not exists:
+        initial = {
+            "device_id": device_id,
+            "device_type": device_type,
+            "flash": "off",
+            "battery": "100",
+            "online": "false",
+            "last_updated": "",
+        }
+        await redis.hset(key, mapping=initial)
+        return initial
+    return await redis.hgetall(key)

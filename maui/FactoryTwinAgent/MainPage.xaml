@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               x:Class="FactoryTwinAgent.MainPage"
+               BackgroundColor="#0f172a">
+
+    <VerticalStackLayout Padding="32" Spacing="24" VerticalOptions="Center">
+
+        <Label Text="Factory Digital Twin"
+                 FontSize="22" FontAttributes="Bold"
+                 TextColor="#38bdf8" HorizontalOptions="Center"/>
+
+        <Label Text="Device Agent"
+                 FontSize="14" TextColor="#64748b"
+                 HorizontalOptions="Center"/>
+
+        <Frame BackgroundColor="#1e293b" BorderColor="#334155"
+                 CornerRadius="12" Padding="16">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="서버 연결" TextColor="#94a3b8" FontSize="12"/>
+                <Label x:Name="LblConnection"
+                         Text="연결 안됨" FontSize="16" FontAttributes="Bold"
+                         TextColor="#ef4444"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <Frame BackgroundColor="#1e293b" BorderColor="#334155"
+                 CornerRadius="12" Padding="16">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="배터리" TextColor="#94a3b8" FontSize="12"/>
+                <Label x:Name="LblBattery"
+                         Text="-- %" FontSize="32" FontAttributes="Bold"
+                         TextColor="#22c55e" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <Frame BackgroundColor="#1e293b" BorderColor="#334155"
+                 CornerRadius="12" Padding="16">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="플래시" TextColor="#94a3b8" FontSize="12"/>
+                <Label x:Name="LblFlash"
+                         Text="OFF" FontSize="32" FontAttributes="Bold"
+                         TextColor="#64748b" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <Label x:Name="LblDebug"
+                 Text="수신 대기중..."
+                 FontSize="11" TextColor="#475569"
+                 HorizontalOptions="Center"
+                 HorizontalTextAlignment="Center"/>
+
+        <Label Text="3D 씬에서 스마트폰을 선택하여 제어하세요"
+                 FontSize="12" TextColor="#475569"
+                 HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+
+    </VerticalStackLayout>
+</ContentPage>

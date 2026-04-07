@@ -29,4 +29,12 @@ class Settings(BaseSettings):
         """factory/{site_id}/state/update"""
         return f"factory/{self.SITE_ID}/state/update"
 
+    def device_state_key(self, device_id: str) -> str:
+        """factory:{site_id}:device:{device_id}:state"""
+        return f"factory:{self.SITE_ID}:device:{device_id}:state"
+
+    def device_pubsub_channel(self) -> str:
+        """factory/{site_id}/device/update"""
+        return f"factory/{self.SITE_ID}/device/update"
+
 settings = Settings()
