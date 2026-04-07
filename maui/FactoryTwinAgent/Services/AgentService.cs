@@ -1,5 +1,4 @@
-﻿using Websocket.Client;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace FactoryTwinAgent.Services;
 
@@ -7,13 +6,12 @@ public class AgentService
 {
     private readonly IFlashlight _flashlight;
     private readonly IBattery _battery;
-    private WebsocketClient? _wsClient;
     private readonly HttpClient _httpClient = new();
 
     private const string DeviceId = "phone1";
-    private const string ServerUrl = "https://factory-digital-twin-production-7e7f.up.railway.app"; 
-    private const string WsUrl = "wss://factory-digital-twin-production-7e7f.up.railway.app/ws/state";
+    private const string ServerUrl = "https://factory-digital-twin-production-7e7f.up.railway.app";
 
+    private string _lastFlashState = "";
 
     public string ConnectionStatus { get; private set; } = "연결 안됨";
     public string FlashStatus { get; private set; } = "OFF";
@@ -30,7 +28,7 @@ public class AgentService
     public async Task StartAsync()
     {
         await RegisterDeviceAsync();
-        await ConnectWebSocketAsync();
+        _ = Task.Run(PollLoopAsync);
         _ = Task.Run(ReportLoopAsync);
     }
 
@@ -44,65 +42,41 @@ public class AgentService
         catch { }
     }
 
-    private async Task ConnectWebSocketAsync()
+    private async Task PollLoopAsync()
     {
-        var uri = new Uri(WsUrl);
-        _wsClient = new WebsocketClient(uri)
+        while (true)
         {
-            ReconnectTimeout = TimeSpan.FromSeconds(10)
-        };
-
-        _wsClient.MessageReceived.Subscribe(msg => HandleMessage(msg.Text));
-
-        _wsClient.ReconnectionHappened.Subscribe(_ =>
-        {
-            ConnectionStatus = "연결됨";
-            StateChanged?.Invoke();
-        });
-
-        _wsClient.DisconnectionHappened.Subscribe(_ =>
-        {
-            ConnectionStatus = "연결 끊김";
-            StateChanged?.Invoke();
-        });
-
-        await _wsClient.Start();
-        ConnectionStatus = "연결됨";
-        StateChanged?.Invoke();
-    }
-
-    private void HandleMessage(string? json)
-    {
-        if (string.IsNullOrEmpty(json)) return;
-
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            DebugMessage = $"수신: {json[..Math.Min(json.Length, 60)]}";
-            StateChanged?.Invoke();
-        });
-
-        try
-        {
-            var doc = JsonDocument.Parse(json);
-            var type = doc.RootElement.GetProperty("type").GetString();
-            if (type != "device_update") return;
-
-            var data = doc.RootElement.GetProperty("data");
-            if (data.GetProperty("device_id").GetString() != DeviceId) return;
-
-            var flash = data.GetProperty("flash").GetString();
-            MainThread.BeginInvokeOnMainThread(async () =>
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            try
             {
-                await ApplyFlashAsync(flash == "on");
-            });
-        }
-        catch (Exception ex)
-        {
-            MainThread.BeginInvokeOnMainThread(() =>
+                var response = await _httpClient.GetStringAsync(
+                    $"{ServerUrl}/devices/{DeviceId}");
+
+                var doc = JsonDocument.Parse(response);
+                var flash = doc.RootElement.GetProperty("flash").GetString() ?? "off";
+
+                ConnectionStatus = "연결됨";
+                DebugMessage = $"poll: flash={flash}";
+
+                if (flash != _lastFlashState)
+                {
+                    _lastFlashState = flash;
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await ApplyFlashAsync(flash == "on");
+                    });
+                }
+                else
+                {
+                    StateChanged?.Invoke();
+                }
+            }
+            catch (Exception ex)
             {
-                DebugMessage = $"오류: {ex.Message}";
+                ConnectionStatus = "연결 끊김";
+                DebugMessage = $"폴링오류: {ex.Message}";
                 StateChanged?.Invoke();
-            });
+            }
         }
     }
 
@@ -114,14 +88,18 @@ public class AgentService
 
         try
         {
+#if ANDROID
+              FactoryTwinAgent.Platforms.Android.FlashlightHelper.TurnOn_Off(on);
+#else
             if (on)
                 await _flashlight.TurnOnAsync();
             else
                 await _flashlight.TurnOffAsync();
+#endif
         }
-        catch
+        catch (Exception ex)
         {
-            DebugMessage = $"플래시 {FlashStatus} (Windows: 하드웨어 없음)";
+            DebugMessage = $"{ex.GetType().Name}: {ex.Message}";
             StateChanged?.Invoke();
         }
     }
@@ -131,30 +109,25 @@ public class AgentService
         while (true)
         {
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await ReportStatusAsync();
-        }
-    }
-
-    private async Task ReportStatusAsync()
-    {
-        try
-        {
-            BatteryLevel = (int)(_battery.ChargeLevel * 100);
-            StateChanged?.Invoke();
-
-            var body = JsonSerializer.Serialize(new
+            try
             {
-                battery = BatteryLevel,
-                flash = FlashStatus.ToLower(),
-                online = true
-            });
+                BatteryLevel = (int)(_battery.ChargeLevel * 100);
+                StateChanged?.Invoke();
 
-            var content = new StringContent(
-                body, System.Text.Encoding.UTF8, "application/json");
+                var body = JsonSerializer.Serialize(new
+                {
+                    battery = BatteryLevel,
+                    flash = FlashStatus.ToLower(),
+                    online = true
+                });
 
-            await _httpClient.PostAsync(
-                $"{ServerUrl}/devices/{DeviceId}/report", content);
+                var content = new StringContent(
+                    body, System.Text.Encoding.UTF8, "application/json");
+
+                await _httpClient.PostAsync(
+                    $"{ServerUrl}/devices/{DeviceId}/report", content);
+            }
+            catch { }
         }
-        catch { }
     }
 }

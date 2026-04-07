@@ -46,7 +46,7 @@
 
         <Label x:Name="LblDebug"
                  Text="수신 대기중..."
-                 FontSize="11" TextColor="#475569"
+                 FontSize="11" TextColor="#ffffff"
                  HorizontalOptions="Center"
                  HorizontalTextAlignment="Center"/>
 
