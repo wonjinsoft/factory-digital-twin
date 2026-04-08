@@ -3,6 +3,7 @@
 역할: Redis에서 기계 상태를 읽고 쓰는 서비스
 """
 import json
+from datetime import datetime, timezone
 import redis.asyncio as aioredis
 from config import settings
 
@@ -91,6 +92,15 @@ async def set_device_field(device_id: str, field: str, value: str) -> None:
         settings.device_pubsub_channel(),
         json.dumps(state)
     )
+
+
+async def mark_device_offline(device_id: str) -> None:
+    """디바이스를 오프라인 + 플래시 off 처리 후 Pub/Sub 발행"""
+    redis = await get_redis()
+    key = settings.device_state_key(device_id)
+    await redis.hset(key, mapping={"online": "false", "flash": "off"})
+    state = await redis.hgetall(key)
+    await redis.publish(settings.device_pubsub_channel(), json.dumps(state))
 
 
 async def init_device(device_id: str, device_type: str) -> dict:

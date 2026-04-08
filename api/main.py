@@ -2,7 +2,9 @@
 파일: api/main.py
 역할: FastAPI 앱 진입점
 """
+import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,13 +20,42 @@ from routers.events import router as events_router
 from routers.devices import router as devices_router
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
+from services.redis_service import get_all_device_ids, get_device_state, mark_device_offline
+
+DEVICE_TIMEOUT_SECONDS = 30
+
+
+async def device_watchdog():
+    """30초마다 디바이스 보고 시간을 확인해 오프라인 처리"""
+    while True:
+        await asyncio.sleep(DEVICE_TIMEOUT_SECONDS)
+        try:
+            device_ids = await get_all_device_ids()
+            now = datetime.now(timezone.utc)
+            for device_id in device_ids:
+                state = await get_device_state(device_id)
+                if not state:
+                    continue
+                last_updated = state.get("last_updated", "")
+                if not last_updated:
+                    await mark_device_offline(device_id)
+                    continue
+                try:
+                    last_dt = datetime.fromisoformat(last_updated)
+                    elapsed = (now - last_dt).total_seconds()
+                    if elapsed > DEVICE_TIMEOUT_SECONDS:
+                        await mark_device_offline(device_id)
+                except ValueError:
+                    await mark_device_offline(device_id)
+        except Exception:
+            pass
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 앱 시작 시 테이블 생성 (없으면)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    asyncio.create_task(device_watchdog())
     yield
 
 
