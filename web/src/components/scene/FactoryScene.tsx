@@ -13,9 +13,12 @@ import { CameraController, CameraTarget } from "./CameraController";
 import { DragController, DragState } from "./DragController";
 import { ConveyorBox } from "./ConveyorBox";
 import { SampleMachine, MachineBox } from "./MachineModels";
+import { SmartphoneModel } from "./SmartphoneModel";
+import { useDeviceStore } from "../../stores/deviceStore";
 
 export function FactoryScene() {
   const machines = useMachineStore((state) => state.machines);
+  const { devices, setDevices } = useDeviceStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cameraTarget, setCameraTarget] = useState<CameraTarget>(null);
   const orbitRef = useRef<any>(null);
@@ -42,6 +45,13 @@ export function FactoryScene() {
     const col = index % 5;
     const row = Math.floor(index / 5);
     return [col * 4 - 8, 0.01, row * 4 - 6];
+  }, []);
+
+  // 초기 디바이스 목록 로드
+  useEffect(() => {
+    axios.get(`${API_URL}/devices`)
+      .then((res) => setDevices(res.data.devices))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -192,6 +202,15 @@ export function FactoryScene() {
           if (index === 0) return <SampleMachine {...props} />;
           return <MachineBox {...props} />;
         })}
+
+        {/* 디바이스 오브젝트 (스마트폰 등) */}
+        {Object.values(devices).map((device, i) => (
+          <SmartphoneModel
+            key={device.device_id}
+            device={device}
+            position={[-12, 1, -6 + i * 3]}
+          />
+        ))}
 
         <OrbitControls ref={orbitRef} makeDefault enabled={!editMode && (cameraTarget === null)} />
       </Canvas>

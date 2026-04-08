@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { WS_URL } from "../config";
 import { useMachineStore } from "../stores/machineStore";
+import { useDeviceStore } from "../stores/deviceStore";
 
 export type ConnectionStatus = "connected" | "connecting" | "disconnected";
 
 export function useWebSocket(onAgentStatus?: (paused: boolean) => void) {
   const ws = useRef<WebSocket | null>(null);
   const updateMachine = useMachineStore((state) => state.updateMachine);
+  const updateDevice = useDeviceStore((state) => state.updateDevice);
   const onAgentStatusRef = useRef(onAgentStatus);
   onAgentStatusRef.current = onAgentStatus;
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
@@ -29,6 +31,8 @@ export function useWebSocket(onAgentStatus?: (paused: boolean) => void) {
         const msg = JSON.parse(event.data);
         if (msg.type === "state_update") {
           updateMachine(msg.data);
+        } else if (msg.type === "device_update") {
+          updateDevice(msg.data);
         } else if (msg.type === "agent_status") {
           onAgentStatusRef.current?.(msg.data.paused);
         }
