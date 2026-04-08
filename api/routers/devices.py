@@ -114,4 +114,5 @@ async def register_device(device_id: str, device_type: str = "smartphone"):
     """Android 앱 최초 실행 시 디바이스 등록"""
     state = await init_device(device_id, device_type)
     await set_device_field(device_id, "online", "true")
+    await set_device_field(device_id, "last_updated", datetime.now(timezone.utc).isoformat())
     return {"ok": True, "device_id": device_id, "state": state}
