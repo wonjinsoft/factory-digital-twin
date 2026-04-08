@@ -21,6 +21,10 @@ class ControlCommand(BaseModel):
     action: str  # flash_on | flash_off
 
 
+class NameUpdate(BaseModel):
+    name: str
+
+
 class DeviceReport(BaseModel):
     """Android 앱이 주기적으로 올리는 실제 상태 보고"""
     battery: int        # 0~100
@@ -95,6 +99,16 @@ async def report_device_state(device_id: str, report: DeviceReport):
 
 
 # ── 등록 ──────────────────────────────────────────────────────────────
+
+@router.post("/{device_id}/name")
+async def set_device_name(device_id: str, body: NameUpdate):
+    """디바이스 표시 이름 설정"""
+    state = await get_device_state(device_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"{device_id} 를 찾을 수 없어요")
+    await set_device_field(device_id, "name", body.name)
+    return {"ok": True, "device_id": device_id, "name": body.name}
+
 
 @router.delete("/{device_id}")
 async def delete_device(device_id: str):

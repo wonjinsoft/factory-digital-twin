@@ -206,11 +206,13 @@ export function FactoryScene() {
         {/* 디바이스 오브젝트 (스마트폰 등) */}
         {Object.values(devices).map((device, i) => {
           const pos: [number, number, number] = [-12, 1, -6 + i * 3];
+          const displayName = device.name?.trim() || `NoName ${i + 1}`;
           return (
             <SmartphoneModel
               key={device.device_id}
               device={device}
               position={pos}
+              displayName={displayName}
               onSelect={() => {
                 setSelectedId(null);
                 setCameraTarget(new THREE.Vector3(...pos));

@@ -8,10 +8,11 @@ import { Device } from "../../stores/deviceStore";
 
 interface Props {
   device: Device;
+  displayName: string;
   onClose: () => void;
 }
 
-export function DevicePopup({ device, onClose }: Props) {
+export function DevicePopup({ device, displayName, onClose }: Props) {
   const [loading, setLoading] = useState(false);
 
   const sendCommand = async (action: string) => {
@@ -40,8 +41,8 @@ export function DevicePopup({ device, onClose }: Props) {
       >
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-2">
-          <span className="font-bold text-sm text-gray-800 truncate max-w-[120px]" title={device.device_id}>
-            📱 {device.device_id}
+          <span className="font-bold text-sm text-gray-800">
+            📱 {displayName}
           </span>
           <button
             onClick={onClose}

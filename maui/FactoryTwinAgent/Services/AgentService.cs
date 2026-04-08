@@ -18,7 +18,7 @@ public class AgentService
             Android.App.Application.Context.ContentResolver,
             Android.Provider.Settings.Secure.AndroidId);
         if (!string.IsNullOrEmpty(androidId))
-            return "phone_" + androidId[..8];  // 앞 8자만 사용
+            return "phone_" + androidId;
 #endif
         var id = Preferences.Get("device_id", null as string);
         if (id == null)
@@ -139,6 +139,17 @@ public class AgentService
             DebugMessage = $"{ex.GetType().Name}: {ex.Message}";
             StateChanged?.Invoke();
         }
+    }
+
+    public async Task UpdateNameAsync(string name)
+    {
+        try
+        {
+            var body = JsonSerializer.Serialize(new { name });
+            var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+            await _httpClient.PostAsync($"{ServerUrl}/devices/{DeviceId}/name", content);
+        }
+        catch { }
     }
 
     public async Task ReportOfflineAsync()

@@ -15,6 +15,14 @@ public partial class MainPage : ContentPage
 
     private bool _isRunning = true;
 
+    private async void OnSaveNameClicked(object sender, EventArgs e)
+    {
+        var name = EntryName.Text?.Trim();
+        if (string.IsNullOrEmpty(name)) return;
+        await _agent.UpdateNameAsync(name);
+        LblDebug.Text = $"이름 저장됨: {name}";
+    }
+
     private async void OnToggleClicked(object sender, EventArgs e)
     {
         if (_isRunning)

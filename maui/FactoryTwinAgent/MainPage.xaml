@@ -54,6 +54,28 @@
                  FontSize="12" TextColor="#475569"
                  HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
 
+        <Frame BackgroundColor="#1e293b" BorderColor="#334155"
+                 CornerRadius="12" Padding="16">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="디바이스 이름" TextColor="#94a3b8" FontSize="12"/>
+                <HorizontalStackLayout Spacing="8">
+                    <Entry x:Name="EntryName"
+                           Placeholder="이름 입력..."
+                           PlaceholderColor="#475569"
+                           TextColor="White"
+                           BackgroundColor="#0f172a"
+                           HorizontalOptions="FillAndExpand"/>
+                    <Button Text="저장"
+                            BackgroundColor="#3b82f6"
+                            TextColor="White"
+                            CornerRadius="8"
+                            FontSize="13"
+                            Padding="12,0"
+                            Clicked="OnSaveNameClicked"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Frame>
+
         <Button x:Name="BtnToggle"
                 Text="⏹ 에이전트 중지"
                 BackgroundColor="#ef4444"

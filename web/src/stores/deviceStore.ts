@@ -5,9 +5,10 @@ import { create } from "zustand";
 export interface Device {
   device_id: string;
   device_type: string;
+  name: string;
   flash: string;        // "on" | "off"
   battery: string;      // "0"~"100"
-  online: string;    // "true" | "false"
+  online: string;       // "true" | "false"
   last_updated: string;
 }
 

@@ -9,10 +9,11 @@ import { DevicePopup } from "./DevicePopup";
 interface Props {
   device: Device;
   position: [number, number, number];
+  displayName: string;
   onSelect?: () => void;
 }
 
-export function SmartphoneModel({ device, position, onSelect }: Props) {
+export function SmartphoneModel({ device, position, displayName, onSelect }: Props) {
   const groupRef = useRef<THREE.Group>(null!);
   const [selected, setSelected] = useState(false);
 
@@ -106,6 +107,7 @@ export function SmartphoneModel({ device, position, onSelect }: Props) {
       {selected && (
         <DevicePopup
           device={device}
+          displayName={displayName}
           onClose={() => setSelected(false)}
         />
       )}

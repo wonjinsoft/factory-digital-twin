@@ -112,6 +112,7 @@ async def init_device(device_id: str, device_type: str) -> dict:
         initial = {
             "device_id": device_id,
             "device_type": device_type,
+            "name": "",
             "flash": "off",
             "battery": "100",
             "online": "false",
