@@ -8,8 +8,19 @@ public class AgentService
     private readonly IBattery _battery;
     private readonly HttpClient _httpClient = new();
 
-    private const string DeviceId = "phone1";
     private const string ServerUrl = "https://factory-digital-twin-production-7e7f.up.railway.app";
+    private readonly string DeviceId = GetOrCreateDeviceId();
+
+    private static string GetOrCreateDeviceId()
+    {
+        var id = Preferences.Get("device_id", null as string);
+        if (id == null)
+        {
+            id = "phone_" + Guid.NewGuid().ToString("N")[..8];
+            Preferences.Set("device_id", id);
+        }
+        return id;
+    }
 
     private string _lastFlashState = "";
 
