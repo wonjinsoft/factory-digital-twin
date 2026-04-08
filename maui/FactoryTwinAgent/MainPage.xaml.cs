@@ -15,7 +15,7 @@ public partial class MainPage : ContentPage
 
     private bool _isRunning = true;
 
-    private void OnToggleClicked(object sender, EventArgs e)
+    private async void OnToggleClicked(object sender, EventArgs e)
     {
 #if ANDROID
         var intent = new Android.Content.Intent(
@@ -23,9 +23,15 @@ public partial class MainPage : ContentPage
             typeof(Platforms.Android.KeepAliveService));
 
         if (_isRunning)
+        {
+            // 즉시 오프라인 보고 후 서비스 중지
+            await _agent.ReportOfflineAsync();
             Android.App.Application.Context.StopService(intent);
+        }
         else
+        {
             Android.App.Application.Context.StartForegroundService(intent);
+        }
 #endif
         _isRunning = !_isRunning;
         UpdateToggleButton();

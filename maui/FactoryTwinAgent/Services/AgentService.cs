@@ -13,6 +13,15 @@ public class AgentService
 
     private static string GetOrCreateDeviceId()
     {
+#if ANDROID
+        // Android 고유 디바이스 ID (공장 초기화 전까지 동일)
+        var androidId = Android.Provider.Settings.Secure.GetString(
+            Android.App.Application.Context.ContentResolver,
+            Android.Provider.Settings.Secure.AndroidId);
+        if (!string.IsNullOrEmpty(androidId))
+            return "phone_" + androidId;
+#endif
+        // 폴백: Preferences에 저장된 ID 또는 신규 생성
         var id = Preferences.Get("device_id", null as string);
         if (id == null)
         {
@@ -113,6 +122,22 @@ public class AgentService
             DebugMessage = $"{ex.GetType().Name}: {ex.Message}";
             StateChanged?.Invoke();
         }
+    }
+
+    public async Task ReportOfflineAsync()
+    {
+        try
+        {
+            var body = JsonSerializer.Serialize(new
+            {
+                battery = BatteryLevel,
+                flash = "off",
+                online = false
+            });
+            var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+            await _httpClient.PostAsync($"{ServerUrl}/devices/{DeviceId}/report", content);
+        }
+        catch { }
     }
 
     private async Task ReportLoopAsync()
