@@ -104,7 +104,7 @@ async def mark_device_offline(device_id: str) -> None:
 
 
 async def init_device(device_id: str, device_type: str) -> dict:
-    """디바이스 최초 등록 (키가 없을 때만 초기화)"""
+    """디바이스 최초 등록 (키가 없을 때만 초기화) — 신규 생성 시 Pub/Sub 발행"""
     redis = await get_redis()
     key = settings.device_state_key(device_id)
     exists = await redis.exists(key)
@@ -118,5 +118,6 @@ async def init_device(device_id: str, device_type: str) -> dict:
             "last_updated": "",
         }
         await redis.hset(key, mapping=initial)
+        await redis.publish(settings.device_pubsub_channel(), json.dumps(initial))
         return initial
     return await redis.hgetall(key)
