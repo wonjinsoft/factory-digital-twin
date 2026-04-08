@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.models import User
 from db.session import get_db
-from deps import get_current_user
+from deps import get_current_user_any
 from services.auth_service import (
     create_access_token,
     get_google_user_info,
@@ -88,7 +88,7 @@ async def kakao_callback(code: str, db: AsyncSession = Depends(get_db)):
 # ── Me ─────────────────────────────────────────────────────────────────
 
 @router.get("/me")
-async def me(current_user: User = Depends(get_current_user)):
+async def me(current_user: User = Depends(get_current_user_any)):
     return {
         "id": current_user.id,
         "email": current_user.email,
