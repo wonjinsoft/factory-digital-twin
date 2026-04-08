@@ -13,6 +13,19 @@ public partial class MainPage : ContentPage
         _agent.StateChanged += OnStateChanged;
     }
 
+    private void OnStopClicked(object sender, EventArgs e)
+    {
+#if ANDROID
+        // 포그라운드 서비스 중지
+        var intent = new Android.Content.Intent(
+            Android.App.Application.Context,
+            typeof(Platforms.Android.KeepAliveService));
+        Android.App.Application.Context.StopService(intent);
+#endif
+        // 앱 종료
+        Application.Current?.Quit();
+    }
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();
