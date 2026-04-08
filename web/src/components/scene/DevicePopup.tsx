@@ -77,14 +77,14 @@ export function DevicePopup({ device, onClose }: Props) {
         <div className="grid grid-cols-2 gap-1">
           <button
             onClick={() => sendCommand("flash_on")}
-            disabled={loading || isOn}
+            disabled={loading || isOn || !isConnected}
             className="bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 text-black text-xs py-1 rounded cursor-pointer font-semibold"
           >
             💡 켜기
           </button>
           <button
             onClick={() => sendCommand("flash_off")}
-            disabled={loading || !isOn}
+            disabled={loading || !isOn || !isConnected}
             className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-300 text-white text-xs py-1 rounded cursor-pointer"
           >
             ■ 끄기

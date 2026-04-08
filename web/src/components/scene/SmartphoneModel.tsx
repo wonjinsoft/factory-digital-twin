@@ -9,9 +9,10 @@ import { DevicePopup } from "./DevicePopup";
 interface Props {
   device: Device;
   position: [number, number, number];
+  onSelect?: () => void;
 }
 
-export function SmartphoneModel({ device, position }: Props) {
+export function SmartphoneModel({ device, position, onSelect }: Props) {
   const groupRef = useRef<THREE.Group>(null!);
   const [selected, setSelected] = useState(false);
 
@@ -47,6 +48,7 @@ export function SmartphoneModel({ device, position }: Props) {
       position={position}
       onClick={(e) => {
         e.stopPropagation();
+        if (!selected) onSelect?.();
         setSelected((v) => !v);
       }}
     >

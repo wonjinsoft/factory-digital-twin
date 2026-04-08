@@ -204,13 +204,20 @@ export function FactoryScene() {
         })}
 
         {/* 디바이스 오브젝트 (스마트폰 등) */}
-        {Object.values(devices).map((device, i) => (
-          <SmartphoneModel
-            key={device.device_id}
-            device={device}
-            position={[-12, 1, -6 + i * 3]}
-          />
-        ))}
+        {Object.values(devices).map((device, i) => {
+          const pos: [number, number, number] = [-12, 1, -6 + i * 3];
+          return (
+            <SmartphoneModel
+              key={device.device_id}
+              device={device}
+              position={pos}
+              onSelect={() => {
+                setSelectedId(null);
+                setCameraTarget(new THREE.Vector3(...pos));
+              }}
+            />
+          );
+        })}
 
         <OrbitControls ref={orbitRef} makeDefault enabled={!editMode && (cameraTarget === null)} />
       </Canvas>
