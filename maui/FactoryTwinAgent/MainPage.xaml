@@ -4,7 +4,8 @@
                x:Class="FactoryTwinAgent.MainPage"
                BackgroundColor="#0f172a">
 
-    <VerticalStackLayout Padding="32" Spacing="24" VerticalOptions="Center">
+    <ScrollView>
+    <VerticalStackLayout Padding="32" Spacing="24">
 
         <Label Text="Factory Digital Twin"
                  FontSize="22" FontAttributes="Bold"
@@ -86,4 +87,5 @@
                 Clicked="OnToggleClicked"/>
 
     </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
