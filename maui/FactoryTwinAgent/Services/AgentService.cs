@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace FactoryTwinAgent.Services;
 
@@ -14,14 +14,12 @@ public class AgentService
     private static string GetOrCreateDeviceId()
     {
 #if ANDROID
-        // Android 고유 디바이스 ID (공장 초기화 전까지 동일)
         var androidId = Android.Provider.Settings.Secure.GetString(
             Android.App.Application.Context.ContentResolver,
             Android.Provider.Settings.Secure.AndroidId);
         if (!string.IsNullOrEmpty(androidId))
-            return "phone_" + androidId;
+            return "phone_" + androidId[..8];  // 앞 8자만 사용
 #endif
-        // 폴백: Preferences에 저장된 ID 또는 신규 생성
         var id = Preferences.Get("device_id", null as string);
         if (id == null)
         {
@@ -32,6 +30,7 @@ public class AgentService
     }
 
     private string _lastFlashState = "";
+    private bool _paused = false;
 
     public string ConnectionStatus { get; private set; } = "연결 안됨";
     public string FlashStatus { get; private set; } = "OFF";
@@ -52,6 +51,23 @@ public class AgentService
         _ = Task.Run(ReportLoopAsync);
     }
 
+    public async Task PauseAsync()
+    {
+        _paused = true;
+        ConnectionStatus = "중지됨";
+        StateChanged?.Invoke();
+        await ReportOfflineAsync();
+    }
+
+    public async Task ResumeAsync()
+    {
+        _paused = false;
+        _lastFlashState = "";  // 상태 리셋하여 최신 명령 즉시 반영
+        await RegisterDeviceAsync();
+        ConnectionStatus = "연결됨";
+        StateChanged?.Invoke();
+    }
+
     private async Task RegisterDeviceAsync()
     {
         try
@@ -67,6 +83,7 @@ public class AgentService
         while (true)
         {
             await Task.Delay(TimeSpan.FromSeconds(2));
+            if (_paused) continue;
             try
             {
                 var response = await _httpClient.GetStringAsync(
@@ -109,7 +126,7 @@ public class AgentService
         try
         {
 #if ANDROID
-              FactoryTwinAgent.Platforms.Android.FlashlightHelper.TurnOn_Off(on);
+            FactoryTwinAgent.Platforms.Android.FlashlightHelper.TurnOn_Off(on);
 #else
             if (on)
                 await _flashlight.TurnOnAsync();
@@ -145,6 +162,7 @@ public class AgentService
         while (true)
         {
             await Task.Delay(TimeSpan.FromSeconds(10));
+            if (_paused) continue;
             try
             {
                 BatteryLevel = (int)(_battery.ChargeLevel * 100);
@@ -157,11 +175,8 @@ public class AgentService
                     online = true
                 });
 
-                var content = new StringContent(
-                    body, System.Text.Encoding.UTF8, "application/json");
-
-                await _httpClient.PostAsync(
-                    $"{ServerUrl}/devices/{DeviceId}/report", content);
+                var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+                await _httpClient.PostAsync($"{ServerUrl}/devices/{DeviceId}/report", content);
             }
             catch { }
         }

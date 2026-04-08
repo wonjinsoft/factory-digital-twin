@@ -17,22 +17,26 @@ public partial class MainPage : ContentPage
 
     private async void OnToggleClicked(object sender, EventArgs e)
     {
-#if ANDROID
-        var intent = new Android.Content.Intent(
-            Android.App.Application.Context,
-            typeof(Platforms.Android.KeepAliveService));
-
         if (_isRunning)
         {
-            // 즉시 오프라인 보고 후 서비스 중지
-            await _agent.ReportOfflineAsync();
-            Android.App.Application.Context.StopService(intent);
+            await _agent.PauseAsync();
+#if ANDROID
+            var stopIntent = new Android.Content.Intent(
+                Android.App.Application.Context,
+                typeof(Platforms.Android.KeepAliveService));
+            Android.App.Application.Context.StopService(stopIntent);
+#endif
         }
         else
         {
-            Android.App.Application.Context.StartForegroundService(intent);
-        }
+            await _agent.ResumeAsync();
+#if ANDROID
+            var startIntent = new Android.Content.Intent(
+                Android.App.Application.Context,
+                typeof(Platforms.Android.KeepAliveService));
+            Android.App.Application.Context.StartForegroundService(startIntent);
 #endif
+        }
         _isRunning = !_isRunning;
         UpdateToggleButton();
     }
