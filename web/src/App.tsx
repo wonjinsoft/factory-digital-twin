@@ -5,6 +5,7 @@ import axios from "axios";
 import { API_URL } from "./config";
 import { useMachineStore, Machine } from "./stores/machineStore";
 import { useWebSocket } from "./hooks/useWebSocket";
+import { useAuthStore } from "./stores/authStore";
 import { MachineCard } from "./components/MachineCard";
 import { ControlPanel } from "./components/ControlPanel";
 import { AlarmPanel } from "./components/AlarmPanel";
@@ -13,6 +14,7 @@ import { KpiPanel } from "./components/KpiPanel";
 
 function App() {
   const { machines, setMachines } = useMachineStore();
+  const { user, clearAuth } = useAuthStore();
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "3d">("dashboard");
   // ✅ 추가
@@ -91,6 +93,28 @@ function App() {
           >
             <span className="hidden sm:inline">{agentPaused ? "▶ Agent 재개" : "⏸ Agent 정지"}</span>
             <span className="sm:hidden">{agentPaused ? "▶ 재개" : "⏸ 정지"}</span>
+          </button>
+
+          {/* 구분선 */}
+          <div className="w-px h-6 bg-gray-300" />
+
+          {/* 관리자 패널 */}
+          {user?.role === "admin" && (
+            <a
+              href="/admin"
+              className="px-3 py-2 rounded-lg font-medium text-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
+            >
+              🔑 관리자
+            </a>
+          )}
+
+          {/* 로그아웃 */}
+          <button
+            onClick={clearAuth}
+            className="px-3 py-2 rounded-lg font-medium text-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
+          >
+            <span className="hidden sm:inline">로그아웃</span>
+            <span className="sm:hidden">↩</span>
           </button>
 
           {/* 구분선 */}
