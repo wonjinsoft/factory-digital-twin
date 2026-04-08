@@ -15,6 +15,23 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     SITE_ID: str = "site1"
 
+    # PostgreSQL
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/factorytwin"
+
+    # JWT
+    JWT_SECRET: str = "change-me-in-production"
+
+    # OAuth — Google
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+
+    # OAuth — Kakao
+    KAKAO_CLIENT_ID: str = ""
+    KAKAO_CLIENT_SECRET: str = ""
+
+    # 현재 API 베이스 URL (OAuth 콜백 URI 생성에 사용)
+    API_BASE_URL: str = "http://localhost:8000"
+
     def get_redis_url(self) -> str:
         """Railway 환경이면 REDIS_URL, 로컬이면 REDIS_HOST:PORT"""
         if self.REDIS_URL:

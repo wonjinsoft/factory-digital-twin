@@ -2,10 +2,13 @@
 파일: api/main.py
 역할: FastAPI 앱 진입점
 """
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from config import settings
+from db.base import engine, Base
 from routers.machines import router as machines_router
 from routers.alarms import router as alarms_router
 from routers.websocket import router as ws_router
@@ -13,11 +16,23 @@ from routers.agent_control import router as agent_control_router
 from routers.layout import router as layout_router
 from routers.events import router as events_router
 from routers.devices import router as devices_router
+from routers.auth import router as auth_router
+from routers.admin import router as admin_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 앱 시작 시 테이블 생성 (없으면)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
 
 app = FastAPI(
     title="Factory Digital Twin API",
     description="공장 설비 디지털 트윈 백엔드 API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # CORS 설정
@@ -44,6 +59,8 @@ app.include_router(agent_control_router)
 app.include_router(layout_router)
 app.include_router(events_router)
 app.include_router(devices_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 
 @app.get("/health")
 async def health_check():
