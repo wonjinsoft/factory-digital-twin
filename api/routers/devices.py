@@ -96,6 +96,19 @@ async def report_device_state(device_id: str, report: DeviceReport):
 
 # ── 등록 ──────────────────────────────────────────────────────────────
 
+@router.delete("/{device_id}")
+async def delete_device(device_id: str):
+    """디바이스 삭제 (Redis 키 제거)"""
+    from services.redis_service import get_redis
+    from config import settings
+    redis = await get_redis()
+    key = settings.device_state_key(device_id)
+    deleted = await redis.delete(key)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"{device_id} 를 찾을 수 없어요")
+    return {"ok": True, "device_id": device_id}
+
+
 @router.post("/{device_id}/register")
 async def register_device(device_id: str, device_type: str = "smartphone"):
     """Android 앱 최초 실행 시 디바이스 등록"""
