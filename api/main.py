@@ -5,7 +5,6 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from config import settings
@@ -23,15 +22,9 @@ from routers.admin import router as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 앱 시작 시 테이블 생성 (없으면)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # 누락 컬럼 자동 추가 (기존 테이블 대응)
-        await conn.execute(text(
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) DEFAULT 'user'"
-        ))
-        await conn.execute(text(
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'pending'"
-        ))
     yield
 
 
