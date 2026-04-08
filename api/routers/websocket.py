@@ -22,6 +22,14 @@ async def websocket_state(websocket: WebSocket):
         "factory/site1/device/update",
     )
 
+    # 새 연결 시 현재 디바이스 상태를 즉시 전송 (재연결 시 누락 방지)
+    from services.redis_service import get_all_device_ids, get_device_state
+    device_ids = await get_all_device_ids()
+    for device_id in device_ids:
+        state = await get_device_state(device_id)
+        if state:
+            await websocket.send_json({"type": "device_update", "data": state})
+
     try:
         async for message in pubsub.listen():
             if message["type"] == "message":
