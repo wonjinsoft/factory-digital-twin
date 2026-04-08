@@ -13,17 +13,39 @@ public partial class MainPage : ContentPage
         _agent.StateChanged += OnStateChanged;
     }
 
-    private void OnStopClicked(object sender, EventArgs e)
+    private bool _isRunning = true;
+
+    private void OnToggleClicked(object sender, EventArgs e)
     {
 #if ANDROID
-        // 포그라운드 서비스 중지
         var intent = new Android.Content.Intent(
             Android.App.Application.Context,
             typeof(Platforms.Android.KeepAliveService));
-        Android.App.Application.Context.StopService(intent);
+
+        if (_isRunning)
+            Android.App.Application.Context.StopService(intent);
+        else
+            Android.App.Application.Context.StartForegroundService(intent);
 #endif
-        // 앱 종료
-        Application.Current?.Quit();
+        _isRunning = !_isRunning;
+        UpdateToggleButton();
+    }
+
+    private void UpdateToggleButton()
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (_isRunning)
+            {
+                BtnToggle.Text = "⏹ 에이전트 중지";
+                BtnToggle.BackgroundColor = Color.FromArgb("#ef4444");
+            }
+            else
+            {
+                BtnToggle.Text = "▶ 에이전트 시작";
+                BtnToggle.BackgroundColor = Color.FromArgb("#22c55e");
+            }
+        });
     }
 
     protected override async void OnAppearing()

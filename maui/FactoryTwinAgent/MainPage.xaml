@@ -54,14 +54,14 @@
                  FontSize="12" TextColor="#475569"
                  HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
 
-        <Button x:Name="BtnStop"
-                Text="⏹ 에이전트 종료"
+        <Button x:Name="BtnToggle"
+                Text="⏹ 에이전트 중지"
                 BackgroundColor="#ef4444"
                 TextColor="White"
                 CornerRadius="12"
                 FontSize="14"
                 HeightRequest="48"
-                Clicked="OnStopClicked"/>
+                Clicked="OnToggleClicked"/>
 
     </VerticalStackLayout>
 </ContentPage>
